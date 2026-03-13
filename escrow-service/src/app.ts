@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { healthRouter } from './routes/health';
 import { authRouter } from './modules/auth/auth.routes';
+import { projectRouter } from './modules/projects/project.routes';
 
 const app = express();
 
@@ -16,5 +17,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
+app.use('/projects', projectRouter);
 
 export default app;

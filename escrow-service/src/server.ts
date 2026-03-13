@@ -1,8 +1,10 @@
 import dotenv from 'dotenv';
+
+// Load environment variables at the very beginning
+dotenv.config();
+
 import app from './app';
 import db from './config/database';
-
-dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 

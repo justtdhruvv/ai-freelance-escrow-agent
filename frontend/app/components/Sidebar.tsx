@@ -38,11 +38,17 @@ export default function Sidebar({ collapsed, toggleSidebar, isMobile }: SidebarP
       {/* Sidebar Header */}
       <div className={`flex items-center ${
         collapsed ? 'justify-center' : 'justify-between'
-      } px-4 py-4 border-b border-gray-800`}>
+      } px-4 py-4 border-b border-gray-800 h-16`}>
         {/* Logo */}
-        {!collapsed && (
-          <span className="text-[#F5F1EC] font-semibold">AI ESCROW</span>
-        )}
+        <span
+          className={`transition-all duration-200 whitespace-nowrap font-semibold text-[#F5F1EC] ${
+            collapsed
+              ? "opacity-0 w-0 overflow-hidden"
+              : "opacity-100 w-auto"
+          }`}
+        >
+          AI ESCROW
+        </span>
         
         {/* Toggle Button */}
         <button
@@ -62,20 +68,22 @@ export default function Sidebar({ collapsed, toggleSidebar, isMobile }: SidebarP
         {menuItems.map((item, index) => (
           <button
             key={index}
-            className={`w-full flex items-center ${
-              collapsed ? 'justify-center px-2' : 'gap-3 px-4'
-            } py-3 rounded-lg transition-colors duration-200 ${
+            className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-colors duration-200 h-10 ${
               item.active 
                 ? 'bg-[#AD7D56] text-white' 
                 : 'text-[#F5F1EC] hover:bg-gray-800'
             }`}
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && (
-              <span className="font-medium text-sm whitespace-nowrap">
-                {item.label}
-              </span>
-            )}
+            <span
+              className={`transition-all duration-200 whitespace-nowrap font-medium text-sm ${
+                collapsed
+                  ? "opacity-0 w-0 overflow-hidden"
+                  : "opacity-100 w-auto"
+              }`}
+            >
+              {item.label}
+            </span>
           </button>
         ))}
       </nav>

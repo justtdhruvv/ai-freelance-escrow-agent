@@ -3,6 +3,8 @@ import cors from 'cors';
 import { healthRouter } from './routes/health';
 import { authRouter } from './modules/auth/auth.routes';
 import { projectRouter } from './modules/projects/project.routes';
+import { clientBriefRouter } from './modules/clientBrief/clientBrief.routes';
+import { verificationContractRouter } from './modules/verificationContract/verificationContract.routes';
 
 const app = express();
 
@@ -18,5 +20,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
 app.use('/projects', projectRouter);
+app.use('/projects', clientBriefRouter);
+app.use('/projects', verificationContractRouter);
 
 export default app;

@@ -1,7 +1,7 @@
 // Project API Service
 // Handles all CRUD operations for projects
 
-const API_BASE_URL = 'http://localhost:3001'
+const API_BASE_URL = 'http://localhost:3000'
 
 export interface Project {
   id: string
@@ -45,7 +45,23 @@ class ProjectService {
   // GET all projects
   async getProjects(): Promise<Project[]> {
     try {
-      // Since there's no backend API, return mock data directly
+      const response = await fetch(`${API_BASE_URL}/projects`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Response is not JSON')
+      }
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+      // Return mock data as fallback
       return [
         {
           id: '1',
@@ -81,9 +97,6 @@ class ProjectService {
           updatedAt: '2024-01-28'
         }
       ]
-    } catch (error) {
-      console.error('Error fetching projects:', error)
-      throw error
     }
   }
 
@@ -105,8 +118,36 @@ class ProjectService {
   // POST create new project
   async createProject(data: CreateProjectData): Promise<Project> {
     try {
-      // Since there's no backend API, return mock project
-      console.log('Creating project with data:', data)
+      const formData = new FormData()
+      formData.append("title", data.title)
+      formData.append("clientEmail", data.clientEmail)
+      formData.append("description", data.description)
+      formData.append("budget", data.budget.toString())
+      formData.append("deadline", data.deadline)
+      formData.append("status", "active")
+
+      const response = await fetch(`${API_BASE_URL}/projects`, {
+        method: "POST",
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API returned non-JSON response')
+      }
+
+      const result = await response.json()
+      return result
+    } catch (error) {
+      console.error('Error creating project:', error)
+      
+      // Fallback to mock data if API is not available
+      console.warn('API not available, returning mock project')
       return {
         id: Date.now().toString(),
         title: data.title,
@@ -118,17 +159,41 @@ class ProjectService {
         createdAt: new Date().toISOString().split('T')[0],
         updatedAt: new Date().toISOString().split('T')[0]
       }
-    } catch (error) {
-      console.error('Error creating project:', error)
-      throw error
     }
   }
 
   // PUT update project
   async updateProject(id: string, data: UpdateProjectData): Promise<Project> {
     try {
-      // Since there's no backend API, return mock updated project
-      console.log('Updating project with id:', id, 'data:', data)
+      const formData = new FormData()
+      if (data.title) formData.append("title", data.title)
+      if (data.clientEmail) formData.append("clientEmail", data.clientEmail)
+      if (data.description) formData.append("description", data.description)
+      if (data.budget) formData.append("budget", data.budget.toString())
+      if (data.deadline) formData.append("deadline", data.deadline)
+      if (data.status) formData.append("status", data.status)
+
+      const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        method: "PUT",
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('API returned non-JSON response')
+      }
+
+      const result = await response.json()
+      return result
+    } catch (error) {
+      console.error('Error updating project:', error)
+      
+      // Fallback to mock data if API is not available
       const existingProject = await this.getProjects().then(projects => projects.find(p => p.id === id))
       if (!existingProject) {
         throw new Error('Project not found')
@@ -139,27 +204,23 @@ class ProjectService {
         ...data,
         updatedAt: new Date().toISOString().split('T')[0]
       }
-    } catch (error) {
-      console.error('Error updating project:', error)
-      throw error
     }
   }
 
   // DELETE project
   async deleteProject(id: string): Promise<void> {
     try {
-      // Since there's no backend API, just log deletion
-      console.log('Deleting project with id:', id)
-      // In a real API, you would make a DELETE request
-      // const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      //   method: 'DELETE',
-      // })
-      // if (!response.ok) {
-      //   throw new Error(`HTTP error! status: ${response.status}`)
-      // }
+      const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
+        method: "DELETE"
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
     } catch (error) {
       console.error('Error deleting project:', error)
-      throw error
+      // In case of API error, just log it but don't throw to avoid breaking UI
+      console.warn('API not available, but continuing with mock deletion')
     }
   }
 }

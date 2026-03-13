@@ -65,7 +65,7 @@ export default function EditProjectModal({ project, onClose, onSuccess }: EditPr
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl"
+          className="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Edit Project</h2>

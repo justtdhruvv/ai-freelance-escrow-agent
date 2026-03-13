@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
+import Sidebar from './Sidebar'
+import Header from './Header'
 
-export default function DashboardLayout({
-  children,
-}: {
+interface DashboardLayoutProps {
   children: React.ReactNode
-}) {
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -78,7 +78,7 @@ export default function DashboardLayout({
               }`
             : `relative transition-all duration-300 ease-in-out ${
                 sidebarCollapsed ? 'w-16' : 'w-64'
-              } ${isMobile ? 'hidden' : 'block'}`
+              }`
           }
         `}
       >
@@ -100,8 +100,8 @@ export default function DashboardLayout({
         />
         
         {/* Dashboard Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto">
+          <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
             {children}
           </div>
         </main>

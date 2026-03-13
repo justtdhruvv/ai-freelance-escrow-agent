@@ -127,7 +127,13 @@ export default function ProjectsPage() {
 
       {/* Modals */}
       {showCreateModal && (
-        <CreateProjectModal onClose={() => setShowCreateModal(false)} />
+        <CreateProjectModal 
+          onClose={() => setShowCreateModal(false)} 
+          onSuccess={() => {
+            // Refresh projects list after creation
+            window.location.reload()
+          }}
+        />
       )}
       
       {showViewModal && selectedProject && (

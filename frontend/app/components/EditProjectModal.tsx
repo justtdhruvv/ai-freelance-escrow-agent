@@ -1,22 +1,24 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, DollarSign, FileText } from 'lucide-react'
-import { projectService, CreateProjectData } from '../services/projectService'
+import { X, Calendar, DollarSign, User, FileText } from 'lucide-react'
+import { projectService, Project, UpdateProjectData } from '../services/projectService'
 
-interface CreateProjectModalProps {
+interface EditProjectModalProps {
+  project: Project
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function CreateProjectModal({ onClose, onSuccess }: CreateProjectModalProps) {
-  const [formData, setFormData] = useState<CreateProjectData>({
-    title: '',
-    clientEmail: '',
-    description: '',
-    budget: 0,
-    deadline: '',
+export default function EditProjectModal({ project, onClose, onSuccess }: EditProjectModalProps) {
+  const [formData, setFormData] = useState<UpdateProjectData>({
+    title: project.title,
+    clientEmail: project.clientEmail,
+    description: project.description,
+    budget: project.budget,
+    status: project.status,
+    deadline: project.deadline,
   })
 
   const [loading, setLoading] = useState(false)
@@ -36,12 +38,12 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
     setError('')
 
     try {
-      await projectService.createProject(formData)
+      await projectService.updateProject(project.id, formData)
       onSuccess()
       onClose()
     } catch (err) {
-      setError('Failed to create project. Please try again.')
-      console.error('Create project error:', err)
+      setError('Failed to update project. Please try again.')
+      console.error('Update project error:', err)
     } finally {
       setLoading(false)
     }
@@ -66,7 +68,7 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
           className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl"
         >
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Create New Project</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Edit Project</h2>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
               <X className="w-5 h-5 text-gray-500" />
             </button>
@@ -135,8 +137,8 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
               />
             </div>
 
-            {/* Budget and Deadline */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Budget, Status, and Deadline */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Budget */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -158,44 +160,56 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
                 </div>
               </div>
 
-              {/* Deadline */}
+              {/* Status */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Deadline
+                  Status
                 </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                  />
-                </div>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56]"
+                >
+                  <option value="active">Active</option>
+                  <option value="completed">Completed</option>
+                  <option value="review">In Review</option>
+                  <option value="disputed">Disputed</option>
+                </select>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <motion.button
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Deadline</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="date"
+                  name="deadline"
+                  value={formData.deadline}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56]"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
                 type="button"
                 onClick={onClose}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
                 Cancel
-              </motion.button>
+              </button>
               <motion.button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] disabled:opacity-50"
                 whileHover={{ scale: loading ? 1 : 1.02 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
               >
-                {loading ? 'Creating...' : 'Create Project'}
+                {loading ? 'Updating...' : 'Update Project'}
               </motion.button>
             </div>
           </form>

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter, usePathname } from 'next/navigation'
 import { 
   LayoutDashboard, 
   FolderOpen, 
@@ -13,13 +14,13 @@ import {
 } from 'lucide-react'
 
 const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', active: true },
-  { icon: FolderOpen, label: 'Projects', active: false },
-  { icon: Target, label: 'Milestones', active: false },
-  { icon: Wallet, label: 'Escrow Wallet', active: false },
-  { icon: Brain, label: 'AI Reviews', active: false },
-  { icon: TrendingUp, label: 'PFI Score', active: false },
-  { icon: Settings, label: 'Settings', active: false },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: FolderOpen, label: 'Projects', href: '/dashboard/projects' },
+  { icon: Target, label: 'Milestones', href: '/dashboard/milestones' },
+  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/wallet' },
+  { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
+  { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score' },
+  { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ]
 
 interface SidebarProps {
@@ -29,6 +30,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ collapsed, toggleSidebar, isMobile }: SidebarProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+
   return (
     <div 
       className={`bg-[#111111] h-screen overflow-hidden transition-[width] duration-200 ${
@@ -68,8 +72,9 @@ export default function Sidebar({ collapsed, toggleSidebar, isMobile }: SidebarP
         {menuItems.map((item, index) => (
           <button
             key={index}
+            onClick={() => router.push(item.href)}
             className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-colors duration-200 h-10 ${
-              item.active 
+              pathname === item.href 
                 ? 'bg-[#AD7D56] text-white' 
                 : 'text-[#F5F1EC] hover:bg-gray-800'
             }`}

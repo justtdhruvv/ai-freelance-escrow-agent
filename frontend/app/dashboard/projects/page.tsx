@@ -3,16 +3,18 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Plus, Filter } from 'lucide-react'
-import ProjectTable from '../components/ProjectTable'
-import CreateProjectModal from '../components/CreateProjectModal'
-import ViewProjectModal from '../components/ViewProjectModal'
-import MilestonesModal from '../components/MilestonesModal'
-import FundEscrowModal from '../components/FundEscrowModal'
-import DisputeModal from '../components/DisputeModal'
-import MessageModal from '../components/MessageModal'
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
+import { useRouter } from "next/navigation"
+import ProjectTable from '../../components/ProjectTable'
+import CreateProjectModal from '../../components/CreateProjectModal'
+import ViewProjectModal from '../../components/ViewProjectModal'
+import MilestonesModal from '../../components/MilestonesModal'
+import FundEscrowModal from '../../components/FundEscrowModal'
+import DisputeModal from '../../components/DisputeModal'
+import MessageModal from '../../components/MessageModal'
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal'
 
 export default function ProjectsPage() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -34,11 +36,23 @@ export default function ProjectsPage() {
         transition={{ duration: 0.5 }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-[#111111]">Projects</h1>
-            <p className="text-gray-600 mt-1">Manage all your freelance escrow projects</p>
+          <div className="flex items-center gap-3">
+            {/* Back Button */}
+            {/* <button
+              onClick={() => router.back()}
+              className="px-3 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium"
+            >
+              ← Back
+            </button> */}
+
+            <div>
+              <h1 className="text-3xl font-bold text-[#111111]">Projects</h1>
+              <p className="text-gray-600 mt-1">
+                Manage all your freelance escrow projects
+              </p>
+            </div>
           </div>
-          
+
           <motion.button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors"
@@ -69,7 +83,7 @@ export default function ProjectsPage() {
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
             />
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-500" />
             <select
@@ -129,42 +143,42 @@ export default function ProjectsPage() {
       {showCreateModal && (
         <CreateProjectModal onClose={() => setShowCreateModal(false)} />
       )}
-      
+
       {showViewModal && selectedProject && (
         <ViewProjectModal
           project={selectedProject}
           onClose={() => setShowViewModal(false)}
         />
       )}
-      
+
       {showMilestonesModal && selectedProject && (
         <MilestonesModal
           project={selectedProject}
           onClose={() => setShowMilestonesModal(false)}
         />
       )}
-      
+
       {showFundEscrowModal && selectedProject && (
         <FundEscrowModal
           project={selectedProject}
           onClose={() => setShowFundEscrowModal(false)}
         />
       )}
-      
+
       {showDisputeModal && selectedProject && (
         <DisputeModal
           project={selectedProject}
           onClose={() => setShowDisputeModal(false)}
         />
       )}
-      
+
       {showMessageModal && selectedProject && (
         <MessageModal
           project={selectedProject}
           onClose={() => setShowMessageModal(false)}
         />
       )}
-      
+
       {showDeleteModal && selectedProject && (
         <DeleteConfirmationModal
           project={selectedProject}

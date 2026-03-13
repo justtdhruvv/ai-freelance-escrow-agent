@@ -15,38 +15,59 @@ export class ProjectController {
     try {
       const user = (req as any).user;
       
-      if (!user || user.role !== 'employer') {
-        const errorResponse = { error: 'Only employers can create projects' };
+      if (!user || user.role !== 'freelancer') {
+        const errorResponse = { error: 'Only freelancers can create projects' };
         res.status(403).json(errorResponse);
         return;
       }
 
-      const { total_price, timeline_days }: CreateProjectInput = req.body;
+      const { client_id, total_price, timeline_days }: CreateProjectInput = req.body;
 
+      // Validate client_id
+      if (!client_id || typeof client_id !== 'string' || client_id.trim().length === 0) {
+        const errorResponse = { error: 'Valid client_id is required' };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // Validate total_price
       if (!total_price || typeof total_price !== 'number' || total_price <= 0) {
         const errorResponse = { error: 'Valid total_price is required (must be a positive number)' };
         res.status(400).json(errorResponse);
         return;
       }
 
+      // Validate timeline_days
       if (timeline_days !== undefined && (typeof timeline_days !== 'number' || timeline_days <= 0)) {
         const errorResponse = { error: 'timeline_days must be a positive number if provided' };
         res.status(400).json(errorResponse);
         return;
       }
 
+      // Verify that the client belongs to the freelancer
+      const isClientOfFreelancer = await this.projectService.checkFreelancerClientRelation(user.userId, client_id);
+      
+      if (!isClientOfFreelancer) {
+        const errorResponse = { error: 'Client not found or access denied' };
+        res.status(404).json(errorResponse);
+        return;
+      }
+
       const project = await this.projectService.createProject({
+        client_id,
         total_price,
         timeline_days,
-        employer_id: user.userId
+        freelancer_id: user.userId
       });
 
       const successResponse = {
         project_id: project.project_id,
         employer_id: project.employer_id,
+        freelancer_id: project.freelancer_id,
         status: project.status,
         total_price: project.total_price,
-        timeline_days: project.timeline_days
+        timeline_days: project.timeline_days,
+        created_at: project.created_at
       };
 
       res.status(201).json(successResponse);
@@ -69,7 +90,19 @@ export class ProjectController {
         return;
       }
 
-      const projects = await this.projectService.getProjectsByEmployer(user.userId);
+      let projects;
+
+      if (user.role === 'freelancer') {
+        // Freelancers can see projects they created
+        projects = await this.projectService.getProjectsByFreelancer(user.userId);
+      } else if (user.role === 'employer') {
+        // Employers can see projects where they are the client
+        projects = await this.projectService.getProjectsByEmployer(user.userId);
+      } else {
+        const errorResponse = { error: 'Invalid user role' };
+        res.status(403).json(errorResponse);
+        return;
+      }
 
       const projectsResponse = projects.map(project => ({
         project_id: project.project_id,
@@ -109,7 +142,19 @@ export class ProjectController {
         return;
       }
 
-      const project = await this.projectService.getProjectByIdAndEmployer(id, user.userId);
+      let project;
+
+      if (user.role === 'freelancer') {
+        // Freelancers can only access projects they created
+        project = await this.projectService.getProjectByFreelancerAndId(id, user.userId);
+      } else if (user.role === 'employer') {
+        // Employers can only access projects where they are the client
+        project = await this.projectService.getProjectByIdAndEmployer(id, user.userId);
+      } else {
+        const errorResponse = { error: 'Invalid user role' };
+        res.status(403).json(errorResponse);
+        return;
+      }
       
       if (!project) {
         const errorResponse = { error: 'Project not found or access denied' };

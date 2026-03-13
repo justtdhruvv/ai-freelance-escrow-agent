@@ -8,13 +8,13 @@ const projectController = new ProjectController();
 // Apply JWT authentication middleware to all project routes
 router.use(authenticateToken);
 
-// POST /projects - Create a new project (employer only)
+// POST /projects - Create a new project (freelancer only)
 router.post('/', projectController.createProject);
 
-// GET /projects - Get all projects for the logged-in employer
+// GET /projects - Get all projects for the logged-in user (freelancer or employer)
 router.get('/', projectController.getProjects);
 
-// GET /projects/:id - Get a specific project by ID (employer owned)
+// GET /projects/:id - Get a specific project by ID (freelancer or employer owned)
 router.get('/:id', projectController.getProjectById);
 
 export const projectRouter = router;

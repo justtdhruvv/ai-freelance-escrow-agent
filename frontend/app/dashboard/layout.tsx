@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from '../components/Sidebar'
 import Header from '../components/Header'
+import ProtectedRoute from '../components/ProtectedRoute'
 
 export default function DashboardLayout({
   children,
@@ -55,57 +56,59 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#F5F1EC] overflow-hidden">
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isMobile && sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-            onClick={closeSidebar}
+    <ProtectedRoute>
+      <div className="flex h-screen w-full bg-[#F5F1EC] overflow-hidden">
+        {/* Mobile Sidebar Overlay */}
+        <AnimatePresence>
+          {isMobile && sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+              onClick={closeSidebar}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Sidebar */}
+        <motion.div
+          className={`
+            ${isMobile 
+              ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+                  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                }`
+              : `relative transition-all duration-300 ease-in-out ${
+                  sidebarCollapsed ? 'w-16' : 'w-64'
+                } ${isMobile ? 'hidden' : 'block'}`
+            }
+          `}
+        >
+          <Sidebar 
+            collapsed={sidebarCollapsed} 
+            toggleSidebar={toggleSidebar}
+            isMobile={isMobile}
+            onClose={closeSidebar}
           />
-        )}
-      </AnimatePresence>
+        </motion.div>
 
-      {/* Sidebar */}
-      <motion.div
-        className={`
-          ${isMobile 
-            ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
-                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`
-            : `relative transition-all duration-300 ease-in-out ${
-                sidebarCollapsed ? 'w-16' : 'w-64'
-              } ${isMobile ? 'hidden' : 'block'}`
-          }
-        `}
-      >
-        <Sidebar 
-          collapsed={sidebarCollapsed} 
-          toggleSidebar={toggleSidebar}
-          isMobile={isMobile}
-          onClose={closeSidebar}
-        />
-      </motion.div>
-
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 bg-[#F5F1EC] min-w-0">
-        {/* Header */}
-        <Header 
-          isMobile={isMobile} 
-          toggleSidebar={toggleSidebar}
-          sidebarCollapsed={sidebarCollapsed}
-        />
-        
-        {/* Dashboard Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
-            {children}
-          </div>
-        </main>
+        {/* Main Content Area */}
+        <div className="flex flex-col flex-1 bg-[#F5F1EC] min-w-0">
+          {/* Header */}
+          <Header 
+            isMobile={isMobile} 
+            toggleSidebar={toggleSidebar}
+            sidebarCollapsed={sidebarCollapsed}
+          />
+          
+          {/* Dashboard Content */}
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

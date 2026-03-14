@@ -1,229 +1,225 @@
-// Project API Service
-// Handles all CRUD operations for projects
-
-const API_BASE_URL = 'http://localhost:3000'
-
 export interface Project {
   id: string
   title: string
-  description: string
-  clientEmail: string  // Client email instead of client ID
-  budget: number
+  clientEmail: string
+  freelancer: string
+  totalEscrowAmount: number
+  milestones: number
   status: 'active' | 'completed' | 'review' | 'disputed'
-  deadline: string
-  createdAt: string
-  updatedAt: string
-}
-
-export interface Milestone {
-  id: string
-  title: string
-  description: string
-  amount: number
-  status: 'pending' | 'active' | 'completed' | 'approved'
-  dueDate: string
+  progress: number
+  description?: string
+  deadline?: string
+  startDate?: string
+  budget?: number
+  riskScore?: number
+  client_id?: string
+  freelancer_id?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface CreateProjectData {
   title: string
-  clientEmail: string  // Client email instead of ID
   description: string
   budget: number
-  deadline: string
+  timeline_days?: number
+  freelancer_id?: string
 }
 
 export interface UpdateProjectData {
   title?: string
-  clientEmail?: string
   description?: string
   budget?: number
-  status?: 'active' | 'completed' | 'review' | 'disputed'
-  deadline?: string
+  status?: string
+  progress?: number
+  freelancer_id?: string
 }
 
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+  error?: string
+}
+
+const API_BASE_URL = "http://localhost:3000/projects"
+
 class ProjectService {
-  // GET all projects
-  async getProjects(): Promise<Project[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/projects`)
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Response is not JSON')
-      }
-
-      const data = await response.json()
-      return data
-    } catch (error) {
-      console.error('Error fetching projects:', error)
-      // Return mock data as fallback
-      return [
-        {
-          id: '1',
-          title: 'E-commerce Platform',
-          clientEmail: 'client1@gmail.com',
-          description: 'Build a modern e-commerce platform with React and Node.js',
-          budget: 5000,
-          status: 'active',
-          deadline: '2024-03-15',
-          createdAt: '2024-01-10',
-          updatedAt: '2024-01-10'
-        },
-        {
-          id: '2',
-          title: 'Mobile App UI Design',
-          clientEmail: 'client2@gmail.com',
-          description: 'Design modern mobile app interface',
-          budget: 3500,
-          status: 'review',
-          deadline: '2024-02-28',
-          createdAt: '2024-01-05',
-          updatedAt: '2024-01-25'
-        },
-        {
-          id: '3',
-          title: 'Website Redesign',
-          clientEmail: 'client3@gmail.com',
-          description: 'Complete redesign of company website',
-          budget: 2500,
-          status: 'completed',
-          deadline: '2024-01-30',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-28'
-        }
-      ]
-    }
+  private getToken(): string | null {
+    return localStorage.getItem("authToken")
   }
 
-  // GET single project
-  async getProject(id: string): Promise<Project> {
+  private getUserId(): string | null {
+    return localStorage.getItem("userId")
+  }
+
+  private async handleRequest<T>(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const token = this.getToken()
+    
+    const defaultHeaders: HeadersInit = {
+      'Content-Type': 'application/json',
+    }
+
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...defaultHeaders,
+        ...options.headers,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(
+        errorData.message || 
+        errorData.error || 
+        `HTTP ${response.status}: ${response.statusText}`
+      )
+    }
+
+    return await response.json()
+  }
+
+  async getProjects(): Promise<Project[]> {
     try {
-      const projects = await this.getProjects()
-      const project = projects.find(p => p.id === id)
-      if (!project) {
-        throw new Error('Project not found')
-      }
-      return project
+      const response = await this.handleRequest<Project[]>(API_BASE_URL)
+      return response || []
     } catch (error) {
-      console.error('Error fetching project:', error)
+      console.error('Failed to fetch projects:', error)
       throw error
     }
   }
 
-  // POST create new project
+  async getProjectById(id: string): Promise<Project> {
+    try {
+      const response = await this.handleRequest<Project>(`${API_BASE_URL}/${id}`)
+      return response
+    } catch (error) {
+      console.error(`Failed to fetch project ${id}:`, error)
+      throw error
+    }
+  }
+
   async createProject(data: CreateProjectData): Promise<Project> {
     try {
-      const formData = new FormData()
-      formData.append("title", data.title)
-      formData.append("clientEmail", data.clientEmail)
-      formData.append("description", data.description)
-      formData.append("budget", data.budget.toString())
-      formData.append("deadline", data.deadline)
-      formData.append("status", "active")
-
-      const response = await fetch(`${API_BASE_URL}/projects`, {
-        method: "POST",
-        body: formData
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API returned non-JSON response')
-      }
-
-      const result = await response.json()
-      return result
-    } catch (error) {
-      console.error('Error creating project:', error)
+      const userId = this.getUserId()
       
-      // Fallback to mock data if API is not available
-      console.warn('API not available, returning mock project')
-      return {
-        id: Date.now().toString(),
-        title: data.title,
-        clientEmail: data.clientEmail,
-        description: data.description,
-        budget: data.budget,
-        status: 'active' as const,
-        deadline: data.deadline,
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0]
+      if (!userId) {
+        throw new Error('User not authenticated. Please login again.')
       }
+      
+      const payload = {
+        client_id: userId,
+        title: data.title,
+        description: data.description,
+        total_price: data.budget,
+        timeline_days: data.timeline_days || 14,
+        freelancer_id: data.freelancer_id
+      }
+
+      const response = await this.handleRequest<Project>(API_BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      
+      return response
+    } catch (error) {
+      console.error('Failed to create project:', error)
+      throw error
     }
   }
 
-  // PUT update project
   async updateProject(id: string, data: UpdateProjectData): Promise<Project> {
     try {
-      const formData = new FormData()
-      if (data.title) formData.append("title", data.title)
-      if (data.clientEmail) formData.append("clientEmail", data.clientEmail)
-      if (data.description) formData.append("description", data.description)
-      if (data.budget) formData.append("budget", data.budget.toString())
-      if (data.deadline) formData.append("deadline", data.deadline)
-      if (data.status) formData.append("status", data.status)
-
-      const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-        method: "PUT",
-        body: formData
+      const response = await this.handleRequest<Project>(`${API_BASE_URL}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      // Check if response is JSON before parsing
-      const contentType = response.headers.get('content-type')
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('API returned non-JSON response')
-      }
-
-      const result = await response.json()
-      return result
+      
+      return response
     } catch (error) {
-      console.error('Error updating project:', error)
-      
-      // Fallback to mock data if API is not available
-      const existingProject = await this.getProjects().then(projects => projects.find(p => p.id === id))
-      if (!existingProject) {
-        throw new Error('Project not found')
-      }
-      
-      return {
-        ...existingProject,
-        ...data,
-        updatedAt: new Date().toISOString().split('T')[0]
-      }
+      console.error(`Failed to update project ${id}:`, error)
+      throw error
     }
   }
 
-  // DELETE project
   async deleteProject(id: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/projects/${id}`, {
-        method: "DELETE"
+      await this.handleRequest<void>(`${API_BASE_URL}/${id}`, {
+        method: 'DELETE',
       })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
     } catch (error) {
-      console.error('Error deleting project:', error)
-      // In case of API error, just log it but don't throw to avoid breaking UI
-      console.warn('API not available, but continuing with mock deletion')
+      console.error(`Failed to delete project ${id}:`, error)
+      throw error
     }
   }
+
+  async getProjectsByClient(clientId: string): Promise<Project[]> {
+    try {
+      const response = await this.handleRequest<Project[]>(
+        `${API_BASE_URL}?client_id=${clientId}`
+      )
+      return response || []
+    } catch (error) {
+      console.error(`Failed to fetch projects for client ${clientId}:`, error)
+      throw error
+    }
+  }
+
+  async getProjectsByFreelancer(freelancerId: string): Promise<Project[]> {
+    try {
+      const response = await this.handleRequest<Project[]>(
+        `${API_BASE_URL}?freelancer_id=${freelancerId}`
+      )
+      return response || []
+    } catch (error) {
+      console.error(`Failed to fetch projects for freelancer ${freelancerId}:`, error)
+      throw error
+    }
+  }
+
+  async updateProjectStatus(id: string, status: string): Promise<Project> {
+    try {
+      const response = await this.handleRequest<Project>(
+        `${API_BASE_URL}/${id}/status`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status }),
+        }
+      )
+      
+      return response
+    } catch (error) {
+      console.error(`Failed to update project status ${id}:`, error)
+      throw error
+    }
+  }
+
+  async updateProjectProgress(id: string, progress: number): Promise<Project> {
+    try {
+      const response = await this.handleRequest<Project>(
+        `${API_BASE_URL}/${id}/progress`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ progress }),
+        }
+      )
+      
+      return response
+    } catch (error) {
+      console.error(`Failed to update project progress ${id}:`, error)
+      throw error
+    }
+  }
+
 }
 
-// Export singleton instance
 export const projectService = new ProjectService()

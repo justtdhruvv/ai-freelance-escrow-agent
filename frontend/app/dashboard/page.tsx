@@ -1,9 +1,10 @@
 'use client'
 
 import StatsCards from '../components/StatsCards'
-import ProjectsTable from '../components/ProjectsTable'
+// import ProjectsTable from '../components/ProjectsTable'
 import MilestoneProgress from '../components/MilestoneProgress'
 import EscrowAnalytics from '../components/EscrowAnalytics'
+import ProjectTable from '../components/ProjectTable'
 
 export default function DashboardPage() {
   return (
@@ -16,7 +17,7 @@ export default function DashboardPage() {
         {/* Projects Table - Takes 2 columns on desktop, 1 on laptop */}
         <div className="lg:col-span-1 xl:col-span-2">
           <div className="overflow-x-auto">
-            <ProjectsTable />
+            <ProjectTable />
           </div>
         </div>
         

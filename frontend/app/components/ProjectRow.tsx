@@ -5,8 +5,8 @@ import ProjectActions from './ProjectActions'
 
 interface Project {
   id: string
-  name: string
-  client: string
+  title: string
+  clientEmail: string
   freelancer: string
   totalEscrowAmount: number
   milestones: number
@@ -70,7 +70,7 @@ export default function ProjectRow({
       <td className="px-6 py-4 whitespace-nowrap">
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-[#111111]">{project.name}</p>
+            <p className="text-sm font-medium text-[#111111]">{project.title}</p>
             {project.riskScore && (
               <span className={`text-xs font-medium ${getRiskColor(project.riskScore)}`}>
                 {project.riskScore}%
@@ -91,7 +91,7 @@ export default function ProjectRow({
 
       {/* Client */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {project.client}
+        {project.clientEmail}
       </td>
 
       {/* Freelancer */}
@@ -101,7 +101,7 @@ export default function ProjectRow({
 
       {/* Total Escrow Amount */}
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#111111]">
-        ${project.totalEscrowAmount.toLocaleString()}
+        ${project.budget?.toLocaleString() || '0'}
       </td>
 
       {/* Milestones */}

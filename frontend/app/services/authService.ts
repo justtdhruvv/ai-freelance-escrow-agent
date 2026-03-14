@@ -1,14 +1,4 @@
-// Authentication Service
-// Handles user authentication and token management
-
-const API_BASE_URL = 'http://localhost:3000'
-
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: 'employer' | 'freelancer'
-}
+const API_BASE_URL = "http://localhost:3000/auth"
 
 export interface LoginData {
   email: string
@@ -16,112 +6,67 @@ export interface LoginData {
 }
 
 export interface SignupData {
-  name: string
   email: string
   password: string
-  role: 'employer' | 'freelancer'
-}
-
-export interface AuthResponse {
-  user: User
-  token: string
+  role?: string
 }
 
 class AuthService {
-  private token: string | null = null
 
-  constructor() {
-    // Load token from localStorage on initialization
-    this.token = localStorage.getItem('authToken')
-  }
+  async login(data: LoginData) {
 
-  // Login user
-  async login(data: LoginData): Promise<AuthResponse> {
-    try {
-      const formData = new FormData()
-      formData.append("email", data.email)
-      formData.append("password", data.password)
+    const res = await fetch(`${API_BASE_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        body: formData
-      })
+    const result = await res.json()
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
-      this.token = result.token || null
-      if (this.token) {
-        localStorage.setItem('authToken', this.token)
-      }
-      return result
-    } catch (error) {
-      console.error('Login error:', error)
-      throw error
-    }
-  }
-
-  // Signup user
-  async signup(data: SignupData): Promise<AuthResponse> {
-    try {
-      const formData = new FormData()
-      formData.append("name", data.name)
-      formData.append("email", data.email)
-      formData.append("password", data.password)
-      formData.append("role", data.role)
-
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-        method: "POST",
-        body: formData
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
-      this.token = result.token || null
-      if (this.token) {
-        localStorage.setItem('authToken', this.token)
-      }
-      return result
-    } catch (error) {
-      console.error('Signup error:', error)
-      throw error
-    }
-  }
-
-  // Get current token
-  getToken(): string | null {
-    return this.token
-  }
-
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.token
-  }
-
-  // Logout user
-  logout(): void {
-    this.token = null
-    localStorage.removeItem('authToken')
-  }
-
-  // Get auth headers for API calls
-  getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+    if (!res.ok) {
+      throw new Error(result.message || "Login failed")
     }
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
+    if (result.token) {
+      localStorage.setItem("authToken", result.token)
     }
 
-    return headers
+    return result
+  }
+
+  async signup(data: SignupData) {
+
+    const res = await fetch(`${API_BASE_URL}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+
+    const result = await res.json()
+
+    if (!res.ok) {
+      throw new Error(result.message || "Signup failed")
+    }
+
+    return result
+  }
+
+  logout() {
+    localStorage.removeItem("authToken")
+  }
+
+  isAuthenticated() {
+    return !!localStorage.getItem("authToken")
+  }
+
+  async validateToken() {
+    // Simple check - if token exists, consider it valid
+    return this.isAuthenticated()
   }
 }
 
-// Export singleton instance
 export const authService = new AuthService()

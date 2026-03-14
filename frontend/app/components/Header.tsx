@@ -1,7 +1,9 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Search, Bell, User, Menu } from 'lucide-react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Search, Bell, User, Menu, LogOut, ChevronDown } from 'lucide-react'
+import { authService } from '../services/authService'
 
 interface HeaderProps {
   isMobile: boolean
@@ -10,6 +12,12 @@ interface HeaderProps {
 }
 
 export default function Header({ isMobile, toggleSidebar, sidebarCollapsed }: HeaderProps) {
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+
+  const handleLogout = () => {
+    authService.logout()
+    window.location.href = '/login'
+  }
   return (
     <motion.header 
       className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-gray-200"
@@ -79,21 +87,74 @@ export default function Header({ isMobile, toggleSidebar, sidebarCollapsed }: He
         </motion.button>
         
         {/* User Profile */}
-        <div className="flex items-center gap-3">
-          {/* User Info - Hidden on mobile */}
-          {!isMobile && (
-            <div className="text-right">
-              <p className="text-sm font-medium text-[#111111]">John Doe</p>
-              <p className="text-xs text-gray-600">Premium Account</p>
-            </div>
-          )}
-          <motion.div 
-            className="w-10 h-10 bg-[#CDB49E] rounded-full flex items-center justify-center"
-            whileHover={{ scale: 1.1, rotate: 5 }}
+        <div className="relative">
+          <motion.button
+            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+            className="flex items-center gap-3"
+            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <User className="w-6 h-6 text-[#111111]" />
-          </motion.div>
+            {/* User Info - Hidden on mobile */}
+            {!isMobile && (
+              <div className="text-right">
+                <p className="text-sm font-medium text-[#111111]">John Doe</p>
+                <p className="text-xs text-gray-600">Premium Account</p>
+              </div>
+            )}
+            <motion.div 
+              className="w-10 h-10 bg-[#CDB49E] rounded-full flex items-center justify-center"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+            >
+              <User className="w-6 h-6 text-[#111111]" />
+            </motion.div>
+            <ChevronDown className="w-4 h-4 text-gray-600" />
+          </motion.button>
+
+          {/* Profile Dropdown */}
+          <AnimatePresence>
+            {isProfileDropdownOpen && (
+              <>
+                {/* Backdrop */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                />
+                
+                {/* Dropdown Menu */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                >
+                  <div className="py-2">
+                    {/* User Info */}
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-[#111111]">John Doe</p>
+                      <p className="text-xs text-gray-600">john.doe@example.com</p>
+                    </div>
+                    
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <motion.button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        whileHover={{ backgroundColor: '#F9FAFB' }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <LogOut className="w-4 h-4 text-gray-500" />
+                        Sign Out
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
     </motion.header>

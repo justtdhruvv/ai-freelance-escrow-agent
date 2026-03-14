@@ -189,14 +189,14 @@ const handleSubmit = async (e: React.FormEvent) => {
           <span className="ml-2 text-sm text-gray-600">Remember me</span>
         </label>
 
-        <motion.a
+        {/* <motion.a
           href="/forgot-password"
           className="text-sm text-[#AD7D56] hover:text-[#8B6344] transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           Forgot password?
-        </motion.a>
+        </motion.a> */}
       </div>
 
       {/* General Error */}

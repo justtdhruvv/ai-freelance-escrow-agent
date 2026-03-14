@@ -1,70 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Sidebar from './components/Sidebar'
-import Header from './components/Header'
-import StatsCards from './components/StatsCards'
-import ProjectsTable from './components/ProjectsTable'
-import MilestoneProgress from './components/MilestoneProgress'
-import EscrowAnalytics from './components/EscrowAnalytics'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-export default function Dashboard() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+export default function HomePage() {
+  const router = useRouter()
 
-  // Handle responsive behavior
   useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768
-      setIsMobile(mobile)
-      // Auto-collapse sidebar on mobile
-      if (mobile) {
-        setSidebarCollapsed(true)
-      }
-    }
-
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    router.push('/dashboard')
+  }, [router])
 
   return (
-    <div className="flex h-screen w-full bg-[#F5F1EC]">
-      {/* Sidebar */}
-      <Sidebar 
-        collapsed={sidebarCollapsed} 
-        toggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-        isMobile={isMobile} 
-      />
-      
-      {/* Main Content Area */}
-      <div className="flex flex-col flex-1 bg-[#F5F1EC]">
-        {/* Header */}
-        <Header isMobile={isMobile} />
-        
-        {/* Dashboard Content */}
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="space-y-6">
-            {/* Statistics Cards */}
-            <StatsCards />
-            
-            {/* Main Grid Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Projects Table - Takes 2 columns */}
-              <div className="lg:col-span-2">
-                <ProjectsTable />
-              </div>
-              
-              {/* Milestone Progress - Takes 1 column */}
-              <div>
-                <MilestoneProgress />
-              </div>
-            </div>
-            
-            {/* Escrow Analytics Section */}
-            <EscrowAnalytics />
-          </div>
-        </main>
+    <div className="flex items-center justify-center min-h-screen bg-[#F5F1EC]">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-[#AD7D56] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading dashboard...</p>
       </div>
     </div>
   )

@@ -1,30 +1,45 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Search, Bell, User } from 'lucide-react'
+import { Search, Bell, User, Menu } from 'lucide-react'
 
 interface HeaderProps {
   isMobile: boolean
+  toggleSidebar: () => void
+  sidebarCollapsed: boolean
 }
 
-export default function Header({ isMobile }: HeaderProps) {
+export default function Header({ isMobile, toggleSidebar, sidebarCollapsed }: HeaderProps) {
   return (
     <motion.header 
-      className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200"
+      className="flex items-center justify-between px-4 sm:px-6 py-4 bg-white border-b border-gray-200"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
       {/* Left Section */}
       <div className="flex items-center gap-4">
+        {/* Mobile Menu Toggle */}
+        {isMobile && (
+          <motion.button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg hover:bg-gray-100"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Menu className="w-5 h-5 text-gray-600" />
+          </motion.button>
+        )}
+        
         {/* Page Title */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.3, delay: 0.3 }}
+          className="min-w-0"
         >
-          <h1 className="text-2xl font-bold text-[#111111]">Dashboard</h1>
-          <p className="text-sm text-gray-600">Welcome back to your AI Escrow dashboard</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#111111] truncate">Dashboard</h1>
+          <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">Welcome back to your AI Escrow dashboard</p>
         </motion.div>
       </div>
       

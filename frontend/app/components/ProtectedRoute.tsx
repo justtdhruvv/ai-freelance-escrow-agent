@@ -22,13 +22,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
           return
         }
 
-        // Optional: Validate token with server
-        const isValid = await authService.validateToken()
-        if (!isValid) {
-          window.location.href = '/login'
-          return
-        }
-
+        // Simple token check - no server validation for now
         setIsAuthenticated(true)
       } catch (error) {
         console.error('Auth check failed:', error)

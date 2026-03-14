@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { useRouter } from "next/navigation"
 import { authService } from '../services/authService'
 
 interface FormData {
@@ -26,6 +27,7 @@ export default function LoginForm() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -62,39 +64,38 @@ export default function LoginForm() {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!validateForm()) {
-      return
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+
+  if (!validateForm()) return
+
+  setIsLoading(true)
+  setErrors({})
+
+  try {
+
+    const response = await authService.login({
+      email: formData.email,
+      password: formData.password
+    })
+
+    if (formData.rememberMe) {
+      localStorage.setItem("rememberMe","true")
     }
 
-    setIsLoading(true)
-    setErrors({})
+    router.push("/dashboard")
 
-    try {
-      const response = await authService.login({
-        email: formData.email,
-        password: formData.password
-      })
+  } catch (error) {
 
-      // Store remember me preference
-      if (formData.rememberMe) {
-        localStorage.setItem('rememberMe', 'true')
-      } else {
-        localStorage.removeItem('rememberMe')
-      }
+    setErrors({
+      general: error instanceof Error ? error.message : "Login failed"
+    })
 
-      // Redirect to dashboard
-      window.location.href = '/dashboard'
-    } catch (error) {
-      setErrors({
-        general: error instanceof Error ? error.message : 'Login failed. Please try again.'
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  } finally {
+    setIsLoading(false)
   }
+}
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword)
@@ -113,11 +114,10 @@ export default function LoginForm() {
           name="email"
           value={formData.email}
           onChange={handleInputChange}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${
-            errors.email
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
-          }`}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.email
+            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+            : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
+            }`}
           placeholder="Enter your email"
           disabled={isLoading}
         />
@@ -144,11 +144,10 @@ export default function LoginForm() {
             name="password"
             value={formData.password}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${
-              errors.password
-                ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
-            }`}
+            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.password
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
+              }`}
             placeholder="Enter your password"
             disabled={isLoading}
           />
@@ -189,7 +188,7 @@ export default function LoginForm() {
           />
           <span className="ml-2 text-sm text-gray-600">Remember me</span>
         </label>
-        
+
         <motion.a
           href="/forgot-password"
           className="text-sm text-[#AD7D56] hover:text-[#8B6344] transition-colors"

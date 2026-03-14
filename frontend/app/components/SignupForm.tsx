@@ -6,14 +6,12 @@ import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react'
 import { authService } from '../services/authService'
 
 interface FormData {
-  name: string
   email: string
   password: string
   confirmPassword: string
 }
 
 interface FormErrors {
-  name?: string
   email?: string
   password?: string
   confirmPassword?: string
@@ -29,7 +27,6 @@ interface PasswordStrength {
 
 export default function SignupForm() {
   const [formData, setFormData] = useState<FormData>({
-    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -110,12 +107,6 @@ export default function SignupForm() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required'
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters'
-    }
-
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!validateEmail(formData.email)) {
@@ -163,7 +154,6 @@ export default function SignupForm() {
 
     try {
       const response = await authService.signup({
-        name: formData.name,
         email: formData.email,
         password: formData.password,
         role: 'freelancer' // Default role
@@ -190,36 +180,6 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Name Field */}
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-          Full Name
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${
-            errors.name
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
-          }`}
-          placeholder="Enter your full name"
-          disabled={isLoading}
-        />
-        {errors.name && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-sm text-red-600"
-          >
-            {errors.name}
-          </motion.p>
-        )}
-      </div>
-
       {/* Email Field */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

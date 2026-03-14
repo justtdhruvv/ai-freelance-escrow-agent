@@ -79,6 +79,9 @@ const handleSubmit = async (e: React.FormEvent) => {
       password: formData.password
     })
 
+    // Store email for fallback if needed
+    localStorage.setItem('userEmail', formData.email)
+
     if (formData.rememberMe) {
       localStorage.setItem("rememberMe","true")
     }

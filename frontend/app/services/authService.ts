@@ -1,14 +1,7 @@
 // Authentication Service
-// Handles user authentication and token management
+// Handles all authentication operations
 
-const API_BASE_URL = 'http://localhost:3000'
-
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: 'employer' | 'freelancer'
-}
+const API_BASE_URL = '/api'
 
 export interface LoginData {
   email: string
@@ -19,20 +12,63 @@ export interface SignupData {
   name: string
   email: string
   password: string
-  role: 'employer' | 'freelancer'
+  role: string
+}
+
+export interface ForgotPasswordData {
+  email: string
 }
 
 export interface AuthResponse {
-  user: User
   token: string
+  user: {
+    id: string
+    name: string
+    email: string
+    role: string
+  }
+  message?: string
+}
+
+export interface AuthError {
+  message: string
+  status?: number
 }
 
 class AuthService {
   private token: string | null = null
 
   constructor() {
-    // Load token from localStorage on initialization
-    this.token = localStorage.getItem('authToken')
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      this.token = localStorage.getItem('authToken')
+    }
+  }
+
+  // Get current token
+  getToken(): string | null {
+    return this.token
+  }
+
+  // Check if user is authenticated
+  isAuthenticated(): boolean {
+    return !!this.token
+  }
+
+  // Store token in localStorage (client side only)
+  private setToken(token: string) {
+    this.token = token
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('authToken', token)
+    }
+  }
+
+  // Remove token from localStorage (client side only)
+  private removeToken() {
+    this.token = null
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+    }
   }
 
   // Login user
@@ -42,20 +78,18 @@ class AuthService {
       formData.append("email", data.email)
       formData.append("password", data.password)
 
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         body: formData
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      this.token = result.token || null
-      if (this.token) {
-        localStorage.setItem('authToken', this.token)
-      }
+      this.setToken(result.token || null)
       return result
     } catch (error) {
       console.error('Login error:', error)
@@ -70,22 +104,19 @@ class AuthService {
       formData.append("name", data.name)
       formData.append("email", data.email)
       formData.append("password", data.password)
-      formData.append("role", data.role)
 
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
         method: "POST",
         body: formData
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
       const result = await response.json()
-      this.token = result.token || null
-      if (this.token) {
-        localStorage.setItem('authToken', this.token)
-      }
+      this.setToken(result.token || null)
       return result
     } catch (error) {
       console.error('Signup error:', error)
@@ -93,35 +124,61 @@ class AuthService {
     }
   }
 
-  // Get current token
-  getToken(): string | null {
-    return this.token
-  }
+  // Forgot password
+  async forgotPassword(data: ForgotPasswordData): Promise<{ message: string }> {
+    try {
+      const formData = new FormData()
+      formData.append("email", data.email)
 
-  // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!this.token
+      const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+        method: "POST",
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Forgot password error:', error)
+      throw error
+    }
   }
 
   // Logout user
   logout(): void {
-    this.token = null
-    localStorage.removeItem('authToken')
+    this.removeToken()
   }
 
-  // Get auth headers for API calls
-  getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
+  // Validate token (optional - for token verification)
+  async validateToken(): Promise<boolean> {
+    if (!this.token) return false
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`
-    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/validate`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${this.token}`
+        }
+      })
 
-    return headers
+      if (!response.ok) {
+        this.removeToken()
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Token validation error:', error)
+      this.removeToken()
+      return false
+    }
   }
 }
 
-// Export singleton instance
-export const authService = new AuthService()
+// Create singleton instance
+const authService = new AuthService()
+
+export { authService }

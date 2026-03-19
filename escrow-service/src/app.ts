@@ -7,6 +7,7 @@ import { clientBriefRouter } from './modules/clientBrief/clientBrief.routes';
 import { verificationContractRouter } from './modules/verificationContract/verificationContract.routes';
 import { userRouter } from './modules/users/user.routes';
 import { clientRouter } from './modules/clients/client.routes';
+import { paymentRouter } from './modules/payments/payment.routes';
 
 const app = express();
 
@@ -32,5 +33,6 @@ app.use('/projects', clientBriefRouter);
 app.use('/projects', verificationContractRouter);
 app.use('/users', userRouter);
 app.use('/clients', clientRouter);
+app.use('/payments', paymentRouter);
 
 export default app;

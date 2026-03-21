@@ -4,7 +4,7 @@
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 import ProjectRow from './ProjectRow'
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { projectService, Project } from "../services/projectService"
 
 interface Project {

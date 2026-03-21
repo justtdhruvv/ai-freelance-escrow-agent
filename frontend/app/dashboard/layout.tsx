@@ -1,33 +1,63 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import Sidebar from '../components/Sidebar'
-import Header from '../components/Header'
-import ProtectedRoute from '../components/ProtectedRoute'
+import { 
+  LayoutDashboard, 
+  FolderOpen, 
+  Target, 
+  Wallet, 
+  Brain, 
+  TrendingUp, 
+  Settings,
+  Users,
+  Menu,
+  X,
+  Search,
+  Bell,
+  ChevronDown
+} from 'lucide-react'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '../store'
+import { logout, initializeAuth } from '../store/slices/authSlice'
 
-export default function DashboardLayout({
-  children,
-}: {
+const menuItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+  { icon: FolderOpen, label: 'Projects', href: '/dashboard/projects' },
+  { icon: Users, label: 'Clients', href: '/dashboard/clients' },
+  { icon: Target, label: 'Milestones', href: '/dashboard/milestones' },
+  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/escrow' },
+  { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
+  { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score' },
+  { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+]
+
+interface DashboardLayoutProps {
   children: React.ReactNode
-}) {
+}
+
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const dispatch = useDispatch<AppDispatch>()
+  const { user } = useSelector((state: RootState) => state.auth)
+  
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
 
-  // Handle responsive behavior
+  useEffect(() => {
+    dispatch(initializeAuth())
+  }, [dispatch])
+
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
-      const tablet = window.innerWidth >= 768 && window.innerWidth < 1024
-      
       setIsMobile(mobile)
       
-      // Auto-collapse sidebar on mobile
       if (mobile) {
-        setSidebarCollapsed(true)
-        setSidebarOpen(false)
-      } else if (tablet) {
         setSidebarCollapsed(true)
         setSidebarOpen(false)
       } else {
@@ -41,74 +71,179 @@ export default function DashboardLayout({
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(!sidebarOpen)
-    } else {
-      setSidebarCollapsed(!sidebarCollapsed)
-    }
-  }
-
-  const closeSidebar = () => {
+  const handleMenuClick = (href: string) => {
+    router.push(href)
     if (isMobile) {
       setSidebarOpen(false)
     }
   }
 
+  const handleLogout = () => {
+    dispatch(logout())
+    router.push('/login')
+  }
+
   return (
-    <ProtectedRoute>
-      <div className="flex h-screen w-full bg-[#F5F1EC] overflow-hidden">
-        {/* Mobile Sidebar Overlay */}
-        <AnimatePresence>
-          {isMobile && sidebarOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-              onClick={closeSidebar}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Sidebar */}
-        <motion.div
-          className={`
-            ${isMobile 
-              ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
-                  sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                }`
-              : `relative transition-all duration-300 ease-in-out ${
-                  sidebarCollapsed ? 'w-16' : 'w-64'
-                } ${isMobile ? 'hidden' : 'block'}`
-            }
-          `}
-        >
-          <Sidebar 
-            collapsed={sidebarCollapsed} 
-            toggleSidebar={toggleSidebar}
-            isMobile={isMobile}
-            onClose={closeSidebar}
+    <div className="flex h-screen w-full bg-[#F5F1EC] overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setSidebarOpen(false)}
           />
-        </motion.div>
+        )}
+      </AnimatePresence>
 
-        {/* Main Content Area */}
-        <div className="flex flex-col flex-1 bg-[#F5F1EC] min-w-0">
-          {/* Header */}
-          <Header 
-            isMobile={isMobile} 
-            toggleSidebar={toggleSidebar}
-            sidebarCollapsed={sidebarCollapsed}
-          />
-          
-          {/* Dashboard Content */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
-              {children}
+      {/* Sidebar */}
+      <motion.div
+        className={`${
+          isMobile 
+            ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`
+            : `relative transition-all duration-300 ease-in-out ${
+                sidebarCollapsed ? 'w-16' : 'w-64'
+              } ${isMobile ? 'hidden' : 'block'}`
+        }`}
+      >
+        <div className="bg-[#111111] h-full flex flex-col">
+          {/* Logo */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-800">
+            {!sidebarCollapsed && (
+              <h1 className="text-white font-bold text-lg">EscrowAI</h1>
+            )}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              {isMobile ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {menuItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => handleMenuClick(item.href)}
+                  className={`${
+                    isActive 
+                      ? 'bg-[#AD7D56] text-white' 
+                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                  } w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200`}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {!sidebarCollapsed && (
+                    <span className="text-sm font-medium">{item.label}</span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* User Section */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-[#AD7D56] rounded-full flex items-center justify-center">
+                <span className="text-white text-sm font-medium">
+                  {user?.name?.charAt(0) || 'U'}
+                </span>
+              </div>
+              {!sidebarCollapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-sm font-medium truncate">
+                    {user?.name || 'User'}
+                  </p>
+                  <p className="text-gray-400 text-xs truncate">
+                    {user?.email || 'user@example.com'}
+                  </p>
+                </div>
+              )}
             </div>
-          </main>
+          </div>
         </div>
+      </motion.div>
+
+      {/* Main Content Area */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between px-6 py-4">
+            {/* Search Bar */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search projects, clients..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* Right Side */}
+            <div className="flex items-center space-x-4">
+              {/* Notifications */}
+              <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+
+              {/* Profile Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <div className="w-8 h-8 bg-[#AD7D56] rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {user?.name?.charAt(0) || 'U'}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+
+                {/* Dropdown Menu */}
+                <AnimatePresence>
+                  {profileDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                    >
+                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        Profile
+                      </button>
+                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                        Settings
+                      </button>
+                      <hr className="my-1 border-gray-200" />
+                      <button
+                        onClick={handleLogout}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
       </div>
-    </ProtectedRoute>
+    </div>
   )
 }

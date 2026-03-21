@@ -6,6 +6,8 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { authService } from '../services/authService'
 
+const TOKEN_KEY = "authToken"
+
 interface FormData {
   email: string
   password: string
@@ -53,195 +55,126 @@ export default function LoginForm() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
 
-    // Clear error for this field when user starts typing
+    // Clear error while typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }))
     }
   }
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-  if (!validateForm()) return
+    if (!validateForm()) return
 
-  setIsLoading(true)
-  setErrors({})
+    setIsLoading(true)
+    setErrors({})
 
-  try {
+    try {
+      const response = await authService.login({
+        email: formData.email,
+        password: formData.password
+      })
 
-    const response = await authService.login({
-      email: formData.email,
-      password: formData.password
-    })
+      // Token is already saved by authService.login()
+      // No need to save it again here
 
-    if (formData.rememberMe) {
-      localStorage.setItem("rememberMe","true")
+      // Optional remember me
+      if (formData.rememberMe) {
+        localStorage.setItem("rememberMe", "true")
+      }
+
+      // Use router.replace to prevent history buildup
+      router.replace("/dashboard")
+
+    } catch (error) {
+      setErrors({
+        general: error instanceof Error ? error.message : "Login failed"
+      })
+    } finally {
+      setIsLoading(false)
     }
-
-    router.push("/dashboard")
-
-  } catch (error) {
-
-    setErrors({
-      general: error instanceof Error ? error.message : "Login failed"
-    })
-
-  } finally {
-    setIsLoading(false)
   }
-}
-
 
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword)
+    setShowPassword(prev => !prev)
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Email Field */}
+
+      {/* Email */}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-          Email Address
-        </label>
+        <label className="block text-sm font-medium mb-2">Email</label>
         <input
           type="email"
-          id="email"
           name="email"
           value={formData.email}
           onChange={handleInputChange}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.email
-            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-            : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
-            }`}
-          placeholder="Enter your email"
           disabled={isLoading}
+          className="w-full px-4 py-3 border rounded-lg"
+          placeholder="Enter your email"
         />
-        {errors.email && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-sm text-red-600"
-          >
-            {errors.email}
-          </motion.p>
-        )}
+        {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
       </div>
 
-      {/* Password Field */}
+      {/* Password */}
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-          Password
-        </label>
+        <label className="block text-sm font-medium mb-2">Password</label>
+
         <div className="relative">
           <input
-            type={showPassword ? 'text' : 'password'}
-            id="password"
+            type={showPassword ? "text" : "password"}
             name="password"
             value={formData.password}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${errors.password
-              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-              : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
-              }`}
-            placeholder="Enter your password"
             disabled={isLoading}
+            className="w-full px-4 py-3 border rounded-lg pr-10"
+            placeholder="Enter your password"
           />
+
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-            disabled={isLoading}
+            className="absolute right-3 top-1/2 -translate-y-1/2"
           >
-            {showPassword ? (
-              <EyeOff className="w-5 h-5" />
-            ) : (
-              <Eye className="w-5 h-5" />
-            )}
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-        {errors.password && (
-          <motion.p
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-sm text-red-600"
-          >
-            {errors.password}
-          </motion.p>
-        )}
+
+        {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
       </div>
 
-      {/* Remember Me & Forgot Password */}
-      <div className="flex items-center justify-between">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            name="rememberMe"
-            checked={formData.rememberMe}
-            onChange={handleInputChange}
-            className="w-4 h-4 text-[#AD7D56] border-gray-300 rounded focus:ring-[#AD7D56] focus:ring-2"
-            disabled={isLoading}
-          />
-          <span className="ml-2 text-sm text-gray-600">Remember me</span>
-        </label>
+      {/* Remember me */}
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="rememberMe"
+          checked={formData.rememberMe}
+          onChange={handleInputChange}
+        />
+        Remember me
+      </label>
 
-        {/* <motion.a
-          href="/forgot-password"
-          className="text-sm text-[#AD7D56] hover:text-[#8B6344] transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Forgot password?
-        </motion.a> */}
-      </div>
-
-      {/* General Error */}
+      {/* General error */}
       {errors.general && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-3 bg-red-50 border border-red-200 rounded-lg"
-        >
-          <p className="text-sm text-red-600">{errors.general}</p>
-        </motion.div>
+        <p className="text-red-500 text-sm">{errors.general}</p>
       )}
 
-      {/* Submit Button */}
-      <motion.button
+      {/* Button */}
+      <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-3 px-4 bg-[#AD7D56] text-white font-medium rounded-lg hover:bg-[#8B6344] focus:ring-2 focus:ring-[#AD7D56] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
-        whileHover={{ scale: isLoading ? 1 : 1.02 }}
-        whileTap={{ scale: isLoading ? 1 : 0.98 }}
+        className="w-full py-3 bg-black text-white rounded-lg flex justify-center items-center"
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            Signing in...
-          </>
-        ) : (
-          'Sign In'
-        )}
-      </motion.button>
+        {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
+      </button>
 
-      {/* Sign Up Link */}
-      <div className="text-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
-          <motion.a
-            href="/signup"
-            className="text-[#AD7D56] hover:text-[#8B6344] font-medium transition-colors"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Sign up
-          </motion.a>
-        </p>
-      </div>
     </form>
   )
 }

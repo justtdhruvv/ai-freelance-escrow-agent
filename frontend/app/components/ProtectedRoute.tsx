@@ -1,39 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, Lock } from 'lucide-react'
-import { authService } from '../services/authService'
+import { useAuth } from '../hooks/useAuth'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if token exists
-        if (!authService.isAuthenticated()) {
-          window.location.href = '/login'
-          return
-        }
-
-        // Simple token check - no server validation for now
-        setIsAuthenticated(true)
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        window.location.href = '/login'
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    checkAuth()
-  }, [])
+  const { isAuthenticated, isLoading } = useAuth('/login')
 
   if (isLoading) {
     return (

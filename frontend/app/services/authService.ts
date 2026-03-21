@@ -31,9 +31,6 @@ class AuthService {
 
     if (result.token) {
       localStorage.setItem("authToken", result.token)
-      if (result.user?.id) {
-        localStorage.setItem("userId", result.user.id)
-      }
     }
 
     return result
@@ -55,28 +52,15 @@ class AuthService {
       throw new Error(result.message || "Signup failed")
     }
 
-    if (result.token) {
-      localStorage.setItem("authToken", result.token)
-      if (result.user?.id) {
-        localStorage.setItem("userId", result.user.id)
-      }
-    }
-
     return result
   }
 
   logout() {
     localStorage.removeItem("authToken")
-    localStorage.removeItem("userId")
   }
 
   isAuthenticated() {
     return !!localStorage.getItem("authToken")
-  }
-
-  async validateToken() {
-    // Simple check - if token exists, consider it valid
-    return this.isAuthenticated()
   }
 }
 

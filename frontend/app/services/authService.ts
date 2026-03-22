@@ -21,6 +21,20 @@ export interface LoginResponse {
     email: string
     role?: string
   }
+
+  getUserData(): UserData | null {
+    try {
+      const userData = localStorage.getItem("userData")
+      return userData ? JSON.parse(userData) : null
+    } catch (error) {
+      console.error("Error parsing user data:", error)
+      return null
+    }
+  }
+
+  setUserData(userData: UserData) {
+    localStorage.setItem("userData", JSON.stringify(userData))
+  }
 }
 
 class AuthService {

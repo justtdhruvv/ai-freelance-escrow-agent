@@ -26,6 +26,7 @@
     "knex": "^3.1.0",
     "mysql2": "^3.19.1",
     "nodemailer": "^8.0.2",
+    "razorpay": "^2.9.6",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3",
     "uuid": "^8.3.2"

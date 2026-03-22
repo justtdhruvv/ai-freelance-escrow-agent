@@ -112,6 +112,7 @@ export class ProjectController {
       const projectsResponse = projects.map(project => ({
         project_id: project.project_id,
         employer_id: project.employer_id,
+        employer_email: project.employer_email,
         freelancer_id: project.freelancer_id,
         status: project.status,
         total_price: project.total_price,

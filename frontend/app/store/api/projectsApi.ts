@@ -27,8 +27,8 @@ export interface CreateProjectRequest {
 }
 
 export interface AddProjectBriefRequest {
-  raw_text: string
-  domain: string
+  client_brief: string
+  domain: 'code' | 'design' | 'content' | 'general'
 }
 
 export const projectsApi = createApi({

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MoreHorizontal, Eye, Edit, Target, Wallet, AlertTriangle, MessageSquare, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Edit, Target, Wallet, AlertTriangle, MessageSquare, Trash2, FilePlus, FileText } from 'lucide-react'
 
 interface Project {
   project_id: string
@@ -17,6 +17,8 @@ interface Project {
 interface ProjectActionsProps {
   project: Project
   clientEmail: string
+  onAddProjectBrief: (project: Project) => void
+  onViewProjectBrief: (project: Project) => void
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -30,6 +32,8 @@ interface ProjectActionsProps {
 export default function ProjectActions({
   project,
   clientEmail,
+  onAddProjectBrief,
+  onViewProjectBrief,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -58,6 +62,18 @@ export default function ProjectActions({
       label: 'Edit Project',
       action: () => onEditProject(project),
       color: 'text-gray-700'
+    },
+    {
+      icon: FilePlus,
+      label: 'Add Project Brief',
+      action: () => onAddProjectBrief(project),
+      color: 'text-blue-600'
+    },
+    {
+      icon: FileText,
+      label: 'View Project Briefs',
+      action: () => onViewProjectBrief(project),
+      color: 'text-purple-600'
     },
     {
       icon: Target,

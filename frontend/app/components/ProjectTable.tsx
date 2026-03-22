@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import ProjectRow from './ProjectRow'
+import CreateProjectBriefModal from './CreateProjectBriefModal'
+import ViewProjectBriefModal from './ViewProjectBriefModal'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
@@ -21,6 +23,9 @@ export default function ProjectTable({
 }: any) {
 
   const [currentPage, setCurrentPage] = useState(1)
+  const [showBriefModal, setShowBriefModal] = useState(false)
+  const [showViewBriefModal, setShowViewBriefModal] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<any>(null)
   const itemsPerPage = 5
 
   // API
@@ -65,6 +70,31 @@ export default function ProjectTable({
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+  }
+
+  const handleAddProjectBrief = (project: any) => {
+    setSelectedProject(project)
+    setShowBriefModal(true)
+  }
+
+  const handleViewProjectBrief = (project: any) => {
+    setSelectedProject(project)
+    setShowViewBriefModal(true)
+  }
+
+  const handleCloseBriefModal = () => {
+    setShowBriefModal(false)
+    setSelectedProject(null)
+  }
+
+  const handleCloseViewBriefModal = () => {
+    setShowViewBriefModal(false)
+    setSelectedProject(null)
+  }
+
+  const handleBriefSuccess = () => {
+    // Refetch projects to update the table
+    window.location.reload()
   }
 
   // Pagination numbers logic
@@ -129,6 +159,8 @@ export default function ProjectTable({
                 project={project}
                 index={index}
                 clientEmail={clientMap[project.employer_id] || 'Unknown Client'}
+                onAddProjectBrief={handleAddProjectBrief}
+                onViewProjectBrief={handleViewProjectBrief}
                 onViewProject={onViewProject}
                 onEditProject={onEditProject}
                 onViewMilestones={onViewMilestones}
@@ -195,6 +227,23 @@ export default function ProjectTable({
           </button>
 
         </div>
+      )}
+
+      {/* Project Brief Modal */}
+      {showBriefModal && selectedProject && (
+        <CreateProjectBriefModal
+          onClose={handleCloseBriefModal}
+          onSuccess={handleBriefSuccess}
+          projectId={selectedProject.project_id}
+        />
+      )}
+
+      {/* View Project Brief Modal */}
+      {showViewBriefModal && selectedProject && (
+        <ViewProjectBriefModal
+          onClose={handleCloseViewBriefModal}
+          projectId={selectedProject.project_id}
+        />
       )}
 
     </motion.div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, CheckCircle } from 'lucide-react'
 
 interface CreateClientModalProps {
@@ -62,25 +62,37 @@ export default function CreateClientModal({ onClose, onSubmit, isLoading }: Crea
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
-      >
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={handleClose}
+        />
+        
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.2 }}
+          className="relative w-full max-w-md mx-4 bg-white rounded-xl shadow-2xl"
+        >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Add New Client</h3>
           <button
             onClick={handleClose}
             disabled={isLoading}
-            className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
+
+        {/* Content */}
+        <div className="p-6">
 
         {/* Success Message */}
         {showSuccess && (
@@ -146,7 +158,9 @@ export default function CreateClientModal({ onClose, onSubmit, isLoading }: Crea
             </button>
           </div>
         </form>
-      </motion.div>
-    </div>
+        </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   )
 }

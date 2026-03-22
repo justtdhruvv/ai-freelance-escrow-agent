@@ -17,6 +17,8 @@ interface ProjectRowProps {
   project: Project
   index: number
   clientEmail: string
+  onAddProjectBrief: (project: Project) => void
+  onViewProjectBrief: (project: Project) => void
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -46,6 +48,8 @@ export default function ProjectRow({
   project,
   index,
   clientEmail,
+  onAddProjectBrief,
+  onViewProjectBrief,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -84,7 +88,7 @@ export default function ProjectRow({
 
       {/* Budget */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        ${project.total_price.toLocaleString()}
+        ₹{project.total_price.toLocaleString()}
       </td>
 
       {/* Timeline */}
@@ -104,6 +108,8 @@ export default function ProjectRow({
         <ProjectActions
           project={project}
           clientEmail={clientEmail}
+          onAddProjectBrief={onAddProjectBrief}
+          onViewProjectBrief={onViewProjectBrief}
           onViewProject={onViewProject}
           onEditProject={onEditProject}
           onViewMilestones={onViewMilestones}

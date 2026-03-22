@@ -78,6 +78,10 @@ export default function DashboardPage() {
     )
   }
 
+  const handleRedirectProjects = () => {
+    window.location.href = '/projects'
+  }
+
   const handleCreateProject = async () => {
     try {
       await createProject(createFormData).unwrap()
@@ -176,7 +180,7 @@ export default function DashboardPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
-            <button className="text-[#AD7D56] hover:text-[#8B6344] text-sm font-medium transition-colors">
+            <button onClick={handleRedirectProjects} className="text-[#AD7D56] hover:text-[#8B6344] text-sm font-medium transition-colors">
               View All
             </button>
           </div>

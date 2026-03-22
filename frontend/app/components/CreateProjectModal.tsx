@@ -5,49 +5,56 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, DollarSign, FileText, Users } from 'lucide-react'
 import { useGetClientsQuery } from '../store/api/clientsApi'
 import { useCreateProjectMutation } from '../store/api/projectsApi'
-import { div } from 'framer-motion/client'
 
 interface CreateProjectModalProps {
   onClose: () => void
-  onSuccess: () => void
+  onSuccess?: () => void // ✅ optional
 }
 
 export default function CreateProjectModal({ onClose, onSuccess }: CreateProjectModalProps) {
+
   const [formData, setFormData] = useState({
+    name: '',
     total_price: 0,
     timeline_days: 0,
-    client_id: ''
+    client_id: '',
+    description: '',
+    deadline: ''
   })
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Fetch clients for dropdown
   const { data: clientsData } = useGetClientsQuery()
   const clients = clientsData?.clients || []
 
-  // Get mutation hook
   const [createProject] = useCreateProjectMutation()
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'total_price' || name === 'timeline_days' ? Number(value) : value
+      [name]: name === 'total_price' || name === 'timeline_days'
+        ? Number(value)
+        : value
     }))
   }
 
   const validateForm = () => {
+    if (!formData.name) {
+      setError('Project name is required')
+      return false
+    }
     if (!formData.client_id) {
-      setError('Please select a client for this project')
+      setError('Select a client')
       return false
     }
     if (formData.total_price <= 0) {
-      setError('Please enter a valid project budget')
+      setError('Enter valid budget')
       return false
     }
     if (formData.timeline_days <= 0) {
-      setError('Please enter a valid timeline in days')
+      setError('Enter valid timeline')
       return false
     }
     setError('')
@@ -56,333 +63,131 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
 
-    if (!validateForm()) {
-      setLoading(false)
-      return
-    }
+    if (!validateForm()) return
+
+    setLoading(true)
 
     try {
-      await createProject.mutateAsync(formData)
-      
-      console.log('Project created with data:', {
+      const payload = {
+        name: formData.name,
         client_id: formData.client_id,
         total_price: formData.total_price,
-        timeline_days: formData.timeline_days
-      })
-      
-      onSuccess()
+        timeline_days: formData.timeline_days,
+      }
+
+      await createProject(payload).unwrap()
+
+      console.log("Project created:", payload)
+
+      onSuccess?.() // ✅ safe call
       onClose()
+
     } catch (err) {
-      setError('Failed to create project. Please try again.')
-      console.error('Create project error:', err)
+      console.error(err)
+      setError("Failed to create project")
     } finally {
       setLoading(false)
     }
   }
 
-
-
   return (
-
     <AnimatePresence>
-
       <div className="fixed inset-0 z-50 flex items-center justify-center">
 
         <motion.div
-
           initial={{ opacity: 0 }}
-
           animate={{ opacity: 1 }}
-
           exit={{ opacity: 0 }}
-
           className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-
           onClick={onClose}
-
         />
 
-
-
         <motion.div
-
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
-
           animate={{ opacity: 1, scale: 1, y: 0 }}
-
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-
-          transition={{ duration: 0.2 }}
-
-          className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
-
+          className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl"
         >
 
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-
-            <h2 className="text-xl font-semibold text-gray-900">Create New Project</h2>
-
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-
-              <X className="w-5 h-5 text-gray-500" />
-
+          <div className="flex items-center justify-between p-6 border-b">
+            <h2 className="text-xl font-semibold">Create New Project</h2>
+            <button onClick={onClose}>
+              <X />
             </button>
-
           </div>
-
-
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
 
             {error && (
-
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-
+              <div className="p-3 bg-red-50 text-red-600 rounded">
                 {error}
-
               </div>
-
             )}
 
+            {/* Project Name */}
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="Project name"
+              className="w-full p-2 border rounded"
+            />
 
+            {/* Client */}
+            <select
+              name="client_id"
+              value={formData.client_id}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Select client</option>
+              {clients.map((c: any) => (
+                <option key={c.user_id} value={c.user_id}>
+                  {c.email}
+                </option>
+              ))}
+            </select>
 
-            {/* Project Title */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-
-                Project Title *
-
-              </label>
-
-              <div className="relative">
-
-                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-
-                <input
-
-                  type="text"
-
-                  name="title"
-
-                  value={formData.title}
-
-                  onChange={handleInputChange}
-
-                  required
-
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-
-                  placeholder="Enter project title"
-
-                />
-
-              </div>
-
-            </div>
-
-
-
-            {/* Client Selection */}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Client <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  name="client_id"
-                  value={formData.client_id}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent appearance-none cursor-pointer"
-                >
-                  <option value="">Select a client...</option>
-                  {clients.map((client) => (
-                    <option key={client.user_id} value={client.user_id}>
-                      {client.email} (PFI: {client.pfi_score})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {clients.length === 0 && (
-                <p className="mt-1 text-sm text-yellow-600">
-                  No clients available. Please add a client first.
-                </p>
-              )}
-            </div>
-
-
-
-            {/* Project Budget */}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Budget ($) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="number"
-                  name="total_price"
-                  value={formData.total_price}
-                  onChange={handleInputChange}
-                  required
-                  min="1"
-                  step="0.01"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                  placeholder="1000.00"
-                />
-              </div>
-            </div>
-
-
+            {/* Budget */}
+            <input
+              type="number"
+              name="total_price"
+              value={formData.total_price}
+              onChange={handleInputChange}
+              placeholder="Budget"
+              className="w-full p-2 border rounded"
+            />
 
             {/* Timeline */}
+            <input
+              type="number"
+              name="timeline_days"
+              value={formData.timeline_days}
+              onChange={handleInputChange}
+              placeholder="Timeline"
+              className="w-full p-2 border rounded"
+            />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Timeline (days) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="number"
-                  name="timeline_days"
-                  value={formData.timeline_days}
-                  onChange={handleInputChange}
-                  required
-                  min="1"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                  placeholder="30"
-                />
-              </div>
-            </div>
-
-
-
-            {/* Description */}
-
-            <div>
-
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-
-                Description
-
-              </label>
-
-              <textarea
-
-                name="description"
-
-                value={formData.description}
-
-                onChange={handleInputChange}
-
-                required
-
-                rows={3}
-
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent resize-none"
-
-                placeholder="Enter project description"
-
-              />
-
-            </div>
-
-
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-
-                  Deadline
-
-                </label>
-
-                <div className="relative">
-
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-
-                  <input
-
-                    type="date"
-
-                    name="deadline"
-
-                    value={formData.deadline}
-
-                    onChange={handleInputChange}
-
-                    required
-
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-
-                  />
-
-                </div>
-
-              </div>
-
-
-
-
-            {/* Action Buttons */}
-
-            <div className="flex gap-4 pt-4">
-
-              <motion.button
-
-                type="button"
-
-                onClick={onClose}
-
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-
-                whileHover={{ scale: 1.02 }}
-
-                whileTap={{ scale: 0.98 }}
-
-              >
-
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <button type="button" onClick={onClose}>
                 Cancel
+              </button>
 
-              </motion.button>
-
-              <motion.button
-
+              <button
                 type="submit"
-
                 disabled={loading}
-
-                className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] disabled:opacity-50 disabled:cursor-not-allowed"
-
-                whileHover={{ scale: loading ? 1 : 1.02 }}
-
-                whileTap={{ scale: loading ? 1 : 0.98 }}
-
+                className="bg-[#AD7D56] text-white px-4 py-2 rounded"
               >
-
-                {loading ? 'Creating...' : 'Create Project'}
-
-              </motion.button>
-
+                {loading ? "Creating..." : "Create"}
+              </button>
             </div>
 
           </form>
-
         </motion.div>
-
       </div>
-
     </AnimatePresence>
-
   )
-
 }
-

@@ -52,12 +52,13 @@ export class ProjectController {
         res.status(404).json(errorResponse);
         return;
       }
-
+       
       const project = await this.projectService.createProject({
         client_id,
         total_price,
         timeline_days,
-        freelancer_id: user.userId
+        freelancer_id: user.userId,
+        employer_id: client_id  // client_id is actually the employer_id
       });
 
       const successResponse = {

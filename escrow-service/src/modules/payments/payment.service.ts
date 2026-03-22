@@ -1,6 +1,6 @@
 import db from '../../config/database';
 import { v4 as uuidv4 } from 'uuid';
-import { MockRazorpayService } from './mockRazorpay.service';
+import { RazorpayService } from './razorpay.service';
 import { logger } from '../../utils/logger';
 
 export interface PaymentEvent {
@@ -13,7 +13,7 @@ export interface PaymentEvent {
   razorpay_payment_id?: string;
   razorpay_transfer_id?: string;
   triggered_by: 'aqa_auto' | 'manual' | 'dispute_resolution';
-  created_at?: Date;
+  created_at?: Date | string;
 }
 
 export interface CreatePaymentEventInput {
@@ -27,9 +27,10 @@ export interface CreatePaymentEventInput {
   triggered_by?: 'aqa_auto' | 'manual' | 'dispute_resolution';
 }
 
-export interface MockPaymentConfirmInput {
+export interface PaymentConfirmInput {
   order_id: string;
   payment_id: string;
+  razorpay_signature: string;
 }
 
 export interface Milestone {
@@ -50,14 +51,14 @@ export interface FreelancerWallet {
 }
 
 export class PaymentService {
-  private mockRazorpayService: MockRazorpayService;
+  private razorpayService: RazorpayService;
 
   constructor() {
-    this.mockRazorpayService = new MockRazorpayService();
+    this.razorpayService = new RazorpayService();
   }
 
   /**
-   * Create mock escrow order for project funding
+   * Create real escrow order for project funding
    */
   async createEscrowOrder(projectId: string, amount: number): Promise<{
     order_id: string;
@@ -72,10 +73,10 @@ export class PaymentService {
       }
 
       // Convert amount to paise for Razorpay format
-      const amountInPaise = MockRazorpayService.convertToPaise(amount);
+      const amountInPaise = this.razorpayService.convertToPaise(amount);
 
-      // Create mock Razorpay order
-      const order = await this.mockRazorpayService.createOrder({
+      // Create real Razorpay order
+      const order = await this.razorpayService.createOrder({
         amount: amountInPaise,
         currency: 'INR',
         receipt: `project_${projectId}`,
@@ -88,7 +89,7 @@ export class PaymentService {
       // Update project with Razorpay order ID
       await this.updateProjectRazorpayOrderId(projectId, order.id);
 
-      logger.info('Mock escrow order created', {
+      logger.info('Real escrow order created', {
         project_id: projectId,
         order_id: order.id,
         amount: amountInPaise
@@ -97,55 +98,64 @@ export class PaymentService {
       return {
         order_id: order.id,
         amount: amountInPaise,
-        currency: order.currency
+        currency: 'INR'
       };
     } catch (error) {
-      logger.error('Error creating mock escrow order', error);
+      logger.error('Error creating escrow order', error);
       throw error;
     }
   }
 
   /**
-   * Simulate payment success and increase escrow balance
-   * POST /payments/mock-confirm
+   * Confirm real payment and update escrow balance
    */
-  async mockPaymentConfirm(input: MockPaymentConfirmInput): Promise<PaymentEvent> {
-    const trx = await db.transaction();
+  async confirmPayment(input: PaymentConfirmInput): Promise<PaymentEvent> {
+    const { order_id, payment_id, razorpay_signature } = input;
+
+    // Verify payment signature
+    const isValidSignature = this.razorpayService.verifyPaymentSignature(
+      order_id,
+      payment_id,
+      razorpay_signature
+    );
+
+    if (!isValidSignature) {
+      throw new Error('Invalid payment signature');
+    }
+
+    // Fetch payment details from Razorpay
+    const payment = await this.razorpayService.fetchPayment(payment_id);
     
+    if (payment.status !== 'captured') {
+      throw new Error('Payment not captured');
+    }
+
+    // Fetch order details to get project_id
+    const order = await this.razorpayService.fetchOrder(order_id);
+    const projectId = order.notes?.project_id;
+    
+    if (!projectId) {
+      throw new Error('Project ID not found in order notes');
+    }
+
+    const trx = await db.transaction();
+
     try {
-      // Verify order exists
-      const order = await this.mockRazorpayService.fetchOrder(input.order_id);
-      
-      // Extract project_id from order notes
-      const projectId = order.notes?.project_id;
-      if (!projectId) {
-        throw new Error('Project ID not found in order');
-      }
-
-      // Get project details
-      const project = await trx('projects')
-        .where({ project_id: projectId })
-        .first();
-
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
       // Convert amount from paise to rupees for database storage
-      const amountInRupees = MockRazorpayService.convertToRupees(order.amount);
+      const amountInRupees = this.razorpayService.convertToRupees(typeof payment.amount === 'string' ? parseInt(payment.amount) : payment.amount);
 
-      // Increase project escrow_balance using Knex transaction
+      // Increase project escrow_balance
       await trx('projects')
         .where({ project_id: projectId })
         .increment('escrow_balance', amountInRupees);
 
-      // Create payment event type = escrow_hold
+      // Create escrow hold payment event
       const paymentEvent = await this.createPaymentEventInTransaction(trx, {
         project_id: projectId,
         type: 'escrow_hold',
         amount: amountInRupees,
-        razorpay_order_id: input.order_id,
-        razorpay_payment_id: input.payment_id,
+        razorpay_order_id: order_id,
+        razorpay_payment_id: payment_id,
         triggered_by: 'manual'
       });
 
@@ -156,31 +166,27 @@ export class PaymentService {
 
       await trx.commit();
 
-      logger.info('Mock payment confirmed and escrow balance updated', {
+      logger.info('Real payment confirmed and escrow balance updated', {
         project_id: projectId,
-        order_id: input.order_id,
-        payment_id: input.payment_id,
+        payment_id: payment_id,
+        order_id: order_id,
         amount: amountInRupees
       });
 
       return paymentEvent;
     } catch (error) {
       await trx.rollback();
-      logger.error('Error confirming mock payment', error);
+      logger.error('Error confirming payment', error);
       throw error;
     }
   }
 
   /**
-   * Release milestone payment with escrow balance and wallet management
-   * POST /milestones/:milestoneId/release
+   * Release milestone payment to freelancer
    */
-  async releaseMilestonePayment(
-    milestoneId: string,
-    triggeredBy: 'aqa_auto' | 'manual' | 'dispute_resolution' = 'manual'
-  ): Promise<PaymentEvent> {
+  async releaseMilestonePayment(milestoneId: string, triggeredBy: 'aqa_auto' | 'manual' | 'dispute_resolution'): Promise<PaymentEvent> {
     const trx = await db.transaction();
-    
+
     try {
       // Get milestone details
       const milestone = await trx('milestone_checks')
@@ -191,6 +197,7 @@ export class PaymentService {
         throw new Error('Milestone not found');
       }
 
+      // Verify milestone is passed
       if (milestone.status !== 'passed') {
         throw new Error('Milestone must be passed before payment can be released');
       }
@@ -204,7 +211,7 @@ export class PaymentService {
         throw new Error('Project not found');
       }
 
-      // Check project escrow_balance using Knex transaction
+      // Check project escrow_balance
       if (project.escrow_balance < milestone.amount) {
         throw new Error('Insufficient escrow balance');
       }
@@ -229,8 +236,19 @@ export class PaymentService {
           .first();
       }
 
-      // Generate mock transfer ID
-      const transferId = this.mockRazorpayService.generateMockTransferId();
+      // Convert amount to paise for Razorpay transfer
+      const amountInPaise = this.razorpayService.convertToPaise(milestone.amount);
+
+      // Create real Razorpay transfer
+      const transfer = await this.razorpayService.createTransfer({
+        amount: amountInPaise,
+        account_id: project.freelancer_id, // This should be Razorpay account ID
+        notes: {
+          project_id: milestone.project_id,
+          milestone_id: milestoneId,
+          type: 'milestone_release'
+        }
+      });
 
       // All operations using Knex transactions:
 
@@ -250,15 +268,18 @@ export class PaymentService {
         milestone_id: milestoneId,
         type: 'milestone_release',
         amount: milestone.amount,
-        razorpay_transfer_id: transferId,
+        razorpay_transfer_id: transfer.id,
         triggered_by: triggeredBy
       });
 
+      // 4. Update PFI score for milestone completion
+      await this.updatePfiScore(project.freelancer_id, 'milestone_passed');
+
       await trx.commit();
 
-      logger.info('Milestone payment released with wallet update', {
+      logger.info('Milestone payment released with real Razorpay transfer', {
         milestone_id: milestoneId,
-        transfer_id: transferId,
+        transfer_id: transfer.id,
         amount: milestone.amount,
         freelancer_id: project.freelancer_id,
         new_wallet_balance: freelancerWallet.balance + milestone.amount
@@ -273,7 +294,41 @@ export class PaymentService {
   }
 
   /**
-   * Create payment event record (within transaction)
+   * Update PFI score based on milestone completion
+   */
+  private async updatePfiScore(freelancerId: string, action: 'milestone_passed' | 'milestone_failed' | 'milestone_delayed'): Promise<void> {
+    try {
+      let scoreChange = 0;
+
+      switch (action) {
+        case 'milestone_passed':
+          scoreChange = 10;
+          break;
+        case 'milestone_failed':
+          scoreChange = -15;
+          break;
+        case 'milestone_delayed':
+          scoreChange = -5;
+          break;
+      }
+
+      await db('users')
+        .where({ user_id: freelancerId })
+        .increment('pfi_score', scoreChange);
+
+      logger.info('PFI score updated', {
+        freelancer_id: freelancerId,
+        action: action,
+        score_change: scoreChange
+      });
+    } catch (error) {
+      logger.error('Error updating PFI score', error);
+      // Don't throw error for PFI update - it's not critical
+    }
+  }
+
+  /**
+   * Create payment event record within transaction
    */
   private async createPaymentEventInTransaction(trx: any, input: CreatePaymentEventInput): Promise<PaymentEvent> {
     const paymentEventId = uuidv4();
@@ -304,7 +359,7 @@ export class PaymentService {
   }
 
   /**
-   * Create payment event record (public method)
+   * Create payment event record
    */
   async createPaymentEvent(input: CreatePaymentEventInput): Promise<PaymentEvent> {
     return this.createPaymentEventInTransaction(db, input);
@@ -376,9 +431,9 @@ export class PaymentService {
   }
 
   /**
-   * Get mock Razorpay service for testing
+   * Get Razorpay service for testing
    */
-  getMockRazorpayService(): MockRazorpayService {
-    return this.mockRazorpayService;
+  getRazorpayService(): RazorpayService {
+    return this.razorpayService;
   }
 }

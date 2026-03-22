@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { PaymentController } from './payment.controller';
+import { WebhookController } from './webhook.controller';
 import { authenticateToken } from '../../middlewares/auth.middleware';
 
 const router = Router();
@@ -11,8 +12,8 @@ router.use(authenticateToken);
 // POST /projects/:projectId/escrow - Create escrow order for project funding
 router.post('/projects/:projectId/escrow', paymentController.createEscrowOrder);
 
-// POST /payments/mock-confirm - Simulate payment success
-router.post('/mock-confirm', paymentController.mockPaymentConfirm);
+// POST /payments/confirm - Confirm real payment
+router.post('/confirm', paymentController.confirmPayment);
 
 // POST /milestones/:milestoneId/release - Release milestone payment to freelancer
 router.post('/milestones/:milestoneId/release', paymentController.releaseMilestonePayment);
@@ -23,4 +24,18 @@ router.get('/projects/:projectId/payment-events', paymentController.getProjectPa
 // GET /payments/key - Get Razorpay public key
 router.get('/key', paymentController.getRazorpayKey);
 
-export { router as paymentRouter };
+// Webhook routes (no JWT authentication required - Razorpay needs direct access)
+// Create a separate router for webhooks without authentication middleware
+const webhookRouter = Router();
+const webhookController = new WebhookController();
+
+// POST /payments/webhook - Handle Razorpay webhooks
+webhookRouter.post('/webhook', webhookController.handleRazorpayWebhook);
+
+// GET /payments/webhook/verify - Verify webhook configuration
+webhookRouter.get('/webhook/verify', webhookController.verifyWebhookConfig);
+
+// POST /payments/webhook/test - Test webhook (development only)
+webhookRouter.post('/webhook/test', webhookController.testWebhook);
+
+export { router as paymentRouter, webhookRouter };

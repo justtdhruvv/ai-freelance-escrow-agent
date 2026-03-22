@@ -28,8 +28,13 @@ export class ClientBriefController {
         return;
       }
 
-      // Verify project exists and user owns it
-      const project = await this.clientBriefService.getProjectByIdAndEmployer(projectId, user.userId);
+      // Verify project exists and user owns it (check both freelancer and employer)
+      let project;
+      if (user.role === 'freelancer') {
+        project = await this.clientBriefService.getProjectByIdAndFreelancer(projectId, user.userId);
+      } else if (user.role === 'employer') {
+        project = await this.clientBriefService.getProjectByIdAndEmployer(projectId, user.userId);
+      }
       
       if (!project) {
         const errorResponse = { error: 'Project not found or access denied' };

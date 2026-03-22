@@ -16,6 +16,7 @@ interface Project {
 
 interface ProjectActionsProps {
   project: Project
+  clientEmail: string
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -28,6 +29,7 @@ interface ProjectActionsProps {
 
 export default function ProjectActions({
   project,
+  clientEmail,
   onViewProject,
   onEditProject,
   onViewMilestones,

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import ProjectRow from './ProjectRow'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
+import { useGetClientsQuery } from '../store/api/clientsApi'
 
 export default function ProjectTable({
   searchTerm,
@@ -22,26 +23,37 @@ export default function ProjectTable({
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
-  // ✅ API CALL
+  // API
   const { data, isLoading, isError } = useGetProjectsQuery()
+  const { data: clientsData } = useGetClientsQuery()
 
-  // ✅ Handle response safely
   const projects = data?.projects || data || []
+  const clients = clientsData?.clients || []
 
-  // ✅ Filtering
+  // Create client ID to email mapping
+  const clientMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    clients.forEach((client: any) => {
+      map[client.user_id] = client.email
+    })
+    return map
+  }, [clients])
+
+  // Filter
   const filteredProjects = useMemo(() => {
     return projects.filter((project: any) => {
 
+      const clientEmail = clientMap[project.employer_id] || ''
       const matchesSearch =
         project.project_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.employer_id?.toLowerCase().includes(searchTerm.toLowerCase())
+        clientEmail?.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesFilter =
         filterStatus === 'all' || project.status === filterStatus
 
       return matchesSearch && matchesFilter
     })
-  }, [projects, searchTerm, filterStatus])
+  }, [projects, searchTerm, filterStatus, clientMap])
 
   // Pagination
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage)
@@ -55,12 +67,35 @@ export default function ProjectTable({
     setCurrentPage(page)
   }
 
-  // ✅ Loading state
+  // Pagination numbers logic
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = []
+
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i)
+    } else {
+      pages.push(1)
+
+      if (currentPage > 3) pages.push("...")
+
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+        if (i > 1 && i < totalPages) pages.push(i)
+      }
+
+      if (currentPage < totalPages - 2) pages.push("...")
+
+      pages.push(totalPages)
+    }
+
+    return pages
+  }
+
+  // Loading
   if (isLoading) {
     return <div className="p-6 text-gray-500">Loading projects...</div>
   }
 
-  // ❌ Error state
+  // Error
   if (isError) {
     return <div className="p-6 text-red-500">Failed to load projects</div>
   }
@@ -78,21 +113,22 @@ export default function ProjectTable({
 
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs">Project</th>
-              <th className="px-6 py-3 text-left text-xs">Client</th>
-              <th className="px-6 py-3 text-left text-xs">Budget</th>
-              <th className="px-6 py-3 text-left text-xs">Timeline</th>
-              <th className="px-6 py-3 text-left text-xs">Status</th>
-              <th className="px-6 py-3 text-left text-xs">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Project</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Client</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Budget</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-gray-100">
             {paginatedProjects.map((project: any, index: number) => (
               <ProjectRow
-                key={project.id || project.project_id}
+                key={project.project_id || index}
                 project={project}
                 index={index}
+                clientEmail={clientMap[project.employer_id] || 'Unknown Client'}
                 onViewProject={onViewProject}
                 onEditProject={onEditProject}
                 onViewMilestones={onViewMilestones}
@@ -103,61 +139,59 @@ export default function ProjectTable({
                 onDeleteProject={onDeleteProject}
               />
             ))}
-            
-            {/* Placeholder rows to maintain consistent table height */}
-            {paginatedProjects.length < itemsPerPage && (
-              Array.from({ length: itemsPerPage - paginatedProjects.length }).map((_, index) => (
-                <tr key={`placeholder-${index}`} className="border-b border-gray-100">
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </td>
-                </tr>
-              ))
-            )}
           </tbody>
+
         </table>
       </div>
 
       {/* Empty */}
       {filteredProjects.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          No projects found
+        <div className="text-center py-16 text-gray-500">
+          No projects found 🚀
         </div>
       )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="p-4 flex justify-between">
+        <div className="flex justify-center items-center gap-2 py-6">
 
+          {/* Prev */}
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
           >
-            <ChevronLeft />
+            <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span>{currentPage} / {totalPages}</span>
+          {/* Numbers */}
+          {getPageNumbers().map((page, i) =>
+            page === "..." ? (
+              <span key={i} className="px-2 text-gray-400">...</span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page as number)}
+                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all
+                  ${
+                    currentPage === page
+                      ? 'bg-[#AD7D56] text-white shadow-md'
+                      : 'border border-gray-200 text-gray-600 hover:bg-gray-100'
+                  }
+                `}
+              >
+                {page}
+              </button>
+            )
+          )}
 
+          {/* Next */}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
+            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
           >
-            <ChevronRight />
+            <ChevronRight className="w-4 h-4" />
           </button>
 
         </div>

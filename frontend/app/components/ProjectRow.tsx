@@ -16,6 +16,7 @@ interface Project {
 interface ProjectRowProps {
   project: Project
   index: number
+  clientEmail: string
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -44,6 +45,7 @@ const getRiskColor = (riskScore: number) => {
 export default function ProjectRow({
   project,
   index,
+  clientEmail,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -77,7 +79,7 @@ export default function ProjectRow({
 
       {/* Client */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {project.employer_id.substring(0, 8)}...
+        {clientEmail}
       </td>
 
       {/* Budget */}
@@ -101,6 +103,7 @@ export default function ProjectRow({
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
         <ProjectActions
           project={project}
+          clientEmail={clientEmail}
           onViewProject={onViewProject}
           onEditProject={onEditProject}
           onViewMilestones={onViewMilestones}

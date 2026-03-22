@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { baseApiConfig } from './baseApi'
 
 export interface VerificationContract {
   id: string
@@ -15,17 +16,8 @@ export interface CreateContractRequest {
 }
 
 export const contractApi = createApi({
+  ...baseApiConfig,
   reducerPath: 'contractApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`)
-      }
-      return headers
-    },
-  }),
   tagTypes: ['Contract'],
   endpoints: (builder) => ({
     createContract: builder.mutation<VerificationContract, { projectId: string }>({
@@ -35,6 +27,10 @@ export const contractApi = createApi({
         body: {},
       }),
       invalidatesTags: ['Contract'],
+      transformErrorResponse: (error) => {
+        console.error('Create Contract Error:', error)
+        return error
+      },
     }),
     approveClient: builder.mutation<VerificationContract, string>({
       query: (contractId) => ({

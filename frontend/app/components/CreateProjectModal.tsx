@@ -1,97 +1,86 @@
 'use client'
 
-
-
 import { useState } from 'react'
-
 import { motion, AnimatePresence } from 'framer-motion'
-
-import { X, Calendar, DollarSign, FileText } from 'lucide-react'
-
-import { projectService, CreateProjectData } from '../services/projectService'
-
-
+import { X, Calendar, DollarSign, FileText, Users } from 'lucide-react'
+import { useGetClientsQuery } from '../store/api/clientsApi'
+import { useCreateProjectMutation } from '../store/api/projectsApi'
+import { div } from 'framer-motion/client'
 
 interface CreateProjectModalProps {
-
   onClose: () => void
-
   onSuccess: () => void
-
 }
 
-
-
 export default function CreateProjectModal({ onClose, onSuccess }: CreateProjectModalProps) {
-
-  const [formData, setFormData] = useState<CreateProjectData>({
-
-    title: '',
-
-    clientEmail: '',
-
-    description: '',
-
-    budget: 0,
-
-    deadline: '',
-
+  const [formData, setFormData] = useState({
+    total_price: 0,
+    timeline_days: 0,
+    client_id: ''
   })
 
-
-
   const [loading, setLoading] = useState(false)
-
   const [error, setError] = useState('')
 
+  // Fetch clients for dropdown
+  const { data: clientsData } = useGetClientsQuery()
+  const clients = clientsData?.clients || []
 
+  // Get mutation hook
+  const [createProject] = useCreateProjectMutation()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-
     const { name, value } = e.target
-
     setFormData(prev => ({
-
       ...prev,
-
-      [name]: name === 'budget' ? Number(value) : value
-
+      [name]: name === 'total_price' || name === 'timeline_days' ? Number(value) : value
     }))
-
   }
 
-
+  const validateForm = () => {
+    if (!formData.client_id) {
+      setError('Please select a client for this project')
+      return false
+    }
+    if (formData.total_price <= 0) {
+      setError('Please enter a valid project budget')
+      return false
+    }
+    if (formData.timeline_days <= 0) {
+      setError('Please enter a valid timeline in days')
+      return false
+    }
+    setError('')
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-
     e.preventDefault()
-
     setLoading(true)
-
     setError('')
 
-
-
-    try {
-
-      await projectService.createProject(formData)
-
-      onSuccess()
-
-      onClose()
-
-    } catch (err) {
-
-      setError('Failed to create project. Please try again.')
-
-      console.error('Create project error:', err)
-
-    } finally {
-
+    if (!validateForm()) {
       setLoading(false)
-
+      return
     }
 
+    try {
+      await createProject.mutateAsync(formData)
+      
+      console.log('Project created with data:', {
+        client_id: formData.client_id,
+        total_price: formData.total_price,
+        timeline_days: formData.timeline_days
+      })
+      
+      onSuccess()
+      onClose()
+    } catch (err) {
+      setError('Failed to create project. Please try again.')
+      console.error('Create project error:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
 
@@ -198,44 +187,81 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
 
 
 
-            {/* Client Email Dropdown */}
+            {/* Client Selection */}
 
             <div>
-
               <label className="block text-sm font-medium text-gray-700 mb-2">
-
-                Client Email *
-
+                Client <span className="text-red-500">*</span>
               </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <select
+                  name="client_id"
+                  value={formData.client_id}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent appearance-none cursor-pointer"
+                >
+                  <option value="">Select a client...</option>
+                  {clients.map((client) => (
+                    <option key={client.user_id} value={client.user_id}>
+                      {client.email} (PFI: {client.pfi_score})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {clients.length === 0 && (
+                <p className="mt-1 text-sm text-yellow-600">
+                  No clients available. Please add a client first.
+                </p>
+              )}
+            </div>
 
-              <select
 
-                name="clientEmail"
 
-                value={formData.clientEmail}
+            {/* Project Budget */}
 
-                onChange={handleInputChange}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Budget ($) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="number"
+                  name="total_price"
+                  value={formData.total_price}
+                  onChange={handleInputChange}
+                  required
+                  min="1"
+                  step="0.01"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
+                  placeholder="1000.00"
+                />
+              </div>
+            </div>
 
-                required
 
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
 
-              >
+            {/* Timeline */}
 
-                <option value="">Select a client</option>
-
-                <option value="client1@gmail.com">client1@gmail.com</option>
-
-                <option value="client2@gmail.com">client2@gmail.com</option>
-
-                <option value="client3@gmail.com">client3@gmail.com</option>
-
-                <option value="client4@gmail.com">client4@gmail.com</option>
-
-                <option value="client5@gmail.com">client5@gmail.com</option>
-
-              </select>
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timeline (days) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="number"
+                  name="timeline_days"
+                  value={formData.timeline_days}
+                  onChange={handleInputChange}
+                  required
+                  min="1"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
+                  placeholder="30"
+                />
+              </div>
             </div>
 
 
@@ -271,55 +297,6 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
             </div>
 
 
-
-            {/* Budget and Deadline */}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              {/* Budget */}
-
-              <div>
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-
-                  Budget ($)
-
-                </label>
-
-                <div className="relative">
-
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-
-                  <input
-
-                    type="number"
-
-                    name="budget"
-
-                    value={formData.budget}
-
-                    onChange={handleInputChange}
-
-                    required
-
-                    min="0"
-
-                    step="0.01"
-
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-
-                    placeholder="0.00"
-
-                  />
-
-                </div>
-
-              </div>
-
-
-
-              {/* Deadline */}
-
               <div>
 
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -352,7 +329,6 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
 
               </div>
 
-            </div>
 
 
 

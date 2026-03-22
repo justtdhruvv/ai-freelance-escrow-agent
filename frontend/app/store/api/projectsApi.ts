@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { baseApiConfig } from './baseApi'
 
 export interface Project {
   id: string
@@ -31,22 +32,17 @@ export interface AddProjectBriefRequest {
 }
 
 export const projectsApi = createApi({
+  ...baseApiConfig,
   reducerPath: 'projectsApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: 'http://localhost:3000',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`)
-      }
-      return headers
-    },
-  }),
   tagTypes: ['Project', 'Brief'],
   endpoints: (builder) => ({
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',
       providesTags: ['Project'],
+      transformResponse: (response: Project[]) => {
+        console.log('Projects API Response:', response)
+        return response
+      },
     }),
     getProject: builder.query<Project, string>({
       query: (id) => `/projects/${id}`,
@@ -59,6 +55,10 @@ export const projectsApi = createApi({
         body: project,
       }),
       invalidatesTags: ['Project'],
+      transformErrorResponse: (error) => {
+        console.error('Create Project Error:', error)
+        return error
+      },
     }),
     addProjectBrief: builder.mutation<ProjectBrief, { projectId: string; data: AddProjectBriefRequest }>({
       query: ({ projectId, data }) => ({

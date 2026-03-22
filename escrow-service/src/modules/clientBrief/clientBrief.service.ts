@@ -99,4 +99,17 @@ export class ClientBriefService {
       throw new Error('Error fetching project');
     }
   }
+
+  async getProjectByIdAndFreelancer(project_id: string, freelancer_id: string): Promise<any | null> {
+    try {
+      const project = await db('projects')
+        .where({ project_id, freelancer_id })
+        .first();
+      
+      return project || null;
+    } catch (error) {
+      logger.error('Error fetching project by ID and freelancer', error);
+      throw new Error('Error fetching project');
+    }
+  }
 }

@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
 import { PaymentService } from './payment.service';
-import { MockRazorpayService } from './mockRazorpay.service';
+import { RazorpayService } from './razorpay.service';
 import { logger } from '../../utils/logger';
 
 export class PaymentController {
   private paymentService: PaymentService;
-  private mockRazorpayService: MockRazorpayService;
+  private razorpayService: RazorpayService;
 
   constructor() {
     this.paymentService = new PaymentService();
-    this.mockRazorpayService = new MockRazorpayService();
+    this.razorpayService = new RazorpayService();
   }
 
   /**
@@ -75,7 +75,7 @@ export class PaymentController {
         order_id: escrowOrder.order_id,
         amount: escrowOrder.amount,
         currency: escrowOrder.currency,
-        key_id: this.mockRazorpayService.getPublicKey(),
+        key_id: this.razorpayService.getPublicKey(),
         project_details: {
           project_id: projectId,
           total_price: project.total_price,
@@ -95,25 +95,26 @@ export class PaymentController {
   };
 
   /**
-   * Simulate payment confirmation
-   * POST /payments/mock-confirm
+   * Confirm real payment
+   * POST /payments/confirm
    */
-  mockPaymentConfirm = async (req: Request, res: Response): Promise<void> => {
-    logger.request('POST', '/payments/mock-confirm', req.body);
+  confirmPayment = async (req: Request, res: Response): Promise<void> => {
+    logger.request('POST', '/payments/confirm', req.body);
     
     try {
-      const { order_id, payment_id } = req.body;
+      const { order_id, payment_id, razorpay_signature } = req.body;
       
-      if (!order_id || !payment_id) {
-        const errorResponse = { error: 'order_id and payment_id are required' };
+      if (!order_id || !payment_id || !razorpay_signature) {
+        const errorResponse = { error: 'order_id, payment_id, and razorpay_signature are required' };
         res.status(400).json(errorResponse);
         return;
       }
 
-      // Confirm mock payment
-      const paymentEvent = await this.paymentService.mockPaymentConfirm({
+      // Confirm payment
+      const paymentEvent = await this.paymentService.confirmPayment({
         order_id,
-        payment_id
+        payment_id,
+        razorpay_signature
       });
 
       const successResponse = {
@@ -128,7 +129,7 @@ export class PaymentController {
 
       res.status(200).json(successResponse);
     } catch (error) {
-      logger.error('Mock payment confirm error', error);
+      logger.error('Confirm payment error', error);
       const errorResponse = { 
         error: 'Internal server error', 
         details: error instanceof Error ? error.message : 'Unknown error' 
@@ -311,7 +312,7 @@ export class PaymentController {
     logger.request('GET', '/payments/key');
     
     try {
-      const publicKey = this.mockRazorpayService.getPublicKey();
+      const publicKey = this.razorpayService.getPublicKey();
       
       if (!publicKey) {
         const errorResponse = { error: 'Razorpay not configured' };

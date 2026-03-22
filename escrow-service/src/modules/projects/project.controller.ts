@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { ProjectService, CreateProjectInput } from './project.service';
+import { VerificationContractService } from '../verificationContract/verificationContract.service';
 import { logger } from '../../utils/logger';
 
 export class ProjectController {
   private projectService: ProjectService;
-
+  private VerificationContractService: VerificationContractService;
   constructor() {
     this.projectService = new ProjectService();
+    this.VerificationContractService = new VerificationContractService();
   }
 
   createProject = async (req: Request, res: Response): Promise<void> => {
@@ -52,7 +54,7 @@ export class ProjectController {
         res.status(404).json(errorResponse);
         return;
       }
-       
+
       const project = await this.projectService.createProject({
         name,
         client_id,
@@ -74,6 +76,11 @@ export class ProjectController {
         timeline_days: project.timeline_days,
         created_at: project.created_at
       };
+
+      await this.VerificationContractService.createVerificationContract({
+        project_id: project.project_id,
+        generated_from_sop_version: 1
+      });
 
       res.status(201).json(successResponse);
     } catch (error) {

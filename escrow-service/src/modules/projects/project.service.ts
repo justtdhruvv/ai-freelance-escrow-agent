@@ -14,6 +14,7 @@ export interface Project {
   timeline_days?: number;
   stripe_payment_intent_id?: string;
   created_at?: Date;
+  employer_email?: string;
 }
 
 export interface CreateProjectInput {
@@ -129,8 +130,13 @@ export class ProjectService {
   async getProjectsByEmployer(employer_id: string): Promise<Project[]> {
     try {
       const projects = await db('projects')
-        .where({ employer_id })
-        .orderBy('created_at', 'desc');
+        .join('users', 'projects.employer_id', 'users.user_id')
+        .select(
+          'projects.*',
+          'users.email as employer_email'
+        )
+        .where('projects.employer_id', employer_id)
+        .orderBy('projects.created_at', 'desc');
       
       return projects;
     } catch (error) {
@@ -174,8 +180,13 @@ export class ProjectService {
   async getProjectsByFreelancer(freelancer_id: string): Promise<Project[]> {
     try {
       const projects = await db('projects')
-        .where({ freelancer_id })
-        .orderBy('created_at', 'desc');
+        .join('users', 'projects.employer_id', 'users.user_id')
+        .select(
+          'projects.*',
+          'users.email as employer_email'
+        )
+        .where('projects.freelancer_id', freelancer_id)
+        .orderBy('projects.created_at', 'desc');
       
       return projects;
     } catch (error) {

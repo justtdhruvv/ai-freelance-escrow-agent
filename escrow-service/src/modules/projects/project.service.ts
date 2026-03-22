@@ -4,6 +4,7 @@ import { logger } from '../../utils/logger';
 import { AIService } from '../ai/ai.service';
 
 export interface Project {
+  name: any;
   project_id: string;
   employer_id: string;
   freelancer_id?: string;
@@ -15,6 +16,7 @@ export interface Project {
 }
 
 export interface CreateProjectInput {
+  name: string;
   client_id: string;
   total_price: number;
   timeline_days?: number;
@@ -38,6 +40,7 @@ export class ProjectService {
       
       await db('projects')
         .insert({
+          name: projectData.name,
           project_id,
           employer_id: projectData.employer_id,
           freelancer_id: projectData.freelancer_id,

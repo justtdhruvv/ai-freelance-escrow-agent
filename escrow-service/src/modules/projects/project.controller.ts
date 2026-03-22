@@ -21,7 +21,7 @@ export class ProjectController {
         return;
       }
 
-      const { client_id, total_price, timeline_days }: CreateProjectInput = req.body;
+      const { name, client_id, total_price, timeline_days }: CreateProjectInput = req.body;
 
       // Validate client_id
       if (!client_id || typeof client_id !== 'string' || client_id.trim().length === 0) {
@@ -54,6 +54,7 @@ export class ProjectController {
       }
        
       const project = await this.projectService.createProject({
+        name,
         client_id,
         total_price,
         timeline_days,
@@ -62,6 +63,7 @@ export class ProjectController {
       });
 
       const successResponse = {
+        name: project.name,
         project_id: project.project_id,
         employer_id: project.employer_id,
         freelancer_id: project.freelancer_id,

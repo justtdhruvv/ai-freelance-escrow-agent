@@ -33,8 +33,8 @@ export default function ProjectTable({
     return projects.filter((project: any) => {
 
       const matchesSearch =
-        project.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.client?.toLowerCase().includes(searchTerm.toLowerCase())
+        project.project_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.employer_id?.toLowerCase().includes(searchTerm.toLowerCase())
 
       const matchesFilter =
         filterStatus === 'all' || project.status === filterStatus
@@ -103,6 +103,32 @@ export default function ProjectTable({
                 onDeleteProject={onDeleteProject}
               />
             ))}
+            
+            {/* Placeholder rows to maintain consistent table height */}
+            {paginatedProjects.length < itemsPerPage && (
+              Array.from({ length: itemsPerPage - paginatedProjects.length }).map((_, index) => (
+                <tr key={`placeholder-${index}`} className="border-b border-gray-100">
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

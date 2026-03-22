@@ -42,10 +42,10 @@ export class ClientBriefController {
         return;
       }
 
-      const { client_breif, domain }: CreateClientBriefInput = req.body;
+      const { client_brief, domain }: CreateClientBriefInput = req.body;
 
-      if (!client_breif || typeof client_breif !== 'string' || client_breif.trim().length === 0) {
-        const errorResponse = { error: 'client_breif is required and must be a non-empty string' };
+      if (!client_brief || typeof client_brief !== 'string' || client_brief.trim().length === 0) {
+        const errorResponse = { error: 'client_brief is required and must be a non-empty string' };
         res.status(400).json(errorResponse);
         return;
       }
@@ -57,7 +57,7 @@ export class ClientBriefController {
       }
 
       const brief = await this.clientBriefService.createClientBrief({
-        client_breif: client_breif.trim(),
+        client_brief: client_brief.trim(),
         domain,
         project_id: projectId
       });

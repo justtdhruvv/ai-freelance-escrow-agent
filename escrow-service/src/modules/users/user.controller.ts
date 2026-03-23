@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { UserService, CreateClientInput } from './user.service';
+import { UserService, CreateClientInput, UpdateUserInput } from './user.service';
 import { EmailService } from '../../utils/emailService';
 import { logger } from '../../utils/logger';
 
@@ -153,6 +153,87 @@ export class UserController {
       res.status(200).json(successResponse);
     } catch (error) {
       logger.error('Test email connection error', error);
+      const errorResponse = { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' };
+      res.status(500).json(errorResponse);
+    }
+  };
+
+  updateUserProfile = async (req: Request, res: Response): Promise<void> => {
+    logger.request('PUT', '/users/profile', req.body);
+    
+    try {
+      const user = (req as any).user;
+      
+      if (!user) {
+        const errorResponse = { error: 'User not authenticated' };
+        res.status(401).json(errorResponse);
+        return;
+      }
+
+      // Extract update data from request body
+      const updateData: UpdateUserInput = {
+        stripe_account_id: req.body.stripe_account_id,
+        razorpay_account_id: req.body.razorpay_account_id,
+        github_token: req.body.github_token
+      };
+
+      // Validate that at least one field is provided
+      if (updateData.stripe_account_id === undefined && 
+          updateData.razorpay_account_id === undefined && 
+          updateData.github_token === undefined) {
+        const errorResponse = { error: 'At least one field must be provided for update' };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // Validate field formats (basic validation)
+      if (updateData.stripe_account_id !== undefined) {
+        if (typeof updateData.stripe_account_id !== 'string' || updateData.stripe_account_id.trim().length === 0) {
+          const errorResponse = { error: 'stripe_account_id must be a non-empty string' };
+          res.status(400).json(errorResponse);
+          return;
+        }
+      }
+
+      if (updateData.razorpay_account_id !== undefined) {
+        if (typeof updateData.razorpay_account_id !== 'string' || updateData.razorpay_account_id.trim().length === 0) {
+          const errorResponse = { error: 'razorpay_account_id must be a non-empty string' };
+          res.status(400).json(errorResponse);
+          return;
+        }
+      }
+
+      if (updateData.github_token !== undefined) {
+        if (typeof updateData.github_token !== 'string' || updateData.github_token.trim().length === 0) {
+          const errorResponse = { error: 'github_token must be a non-empty string' };
+          res.status(400).json(errorResponse);
+          return;
+        }
+      }
+
+      // Update user profile
+      const updatedUser = await this.userService.updateUser(user.userId, updateData);
+
+      // Remove sensitive data from response
+      const { password_hash, ...userWithoutPassword } = updatedUser;
+
+      const successResponse = {
+        message: 'User profile updated successfully',
+        user: userWithoutPassword
+      };
+
+      res.status(200).json(successResponse);
+    } catch (error) {
+      logger.error('Update user profile error', error);
+      
+      if (error instanceof Error) {
+        if (error.message === 'No valid fields to update') {
+          const errorResponse = { error: 'No valid fields to update' };
+          res.status(400).json(errorResponse);
+          return;
+        }
+      }
+      
       const errorResponse = { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' };
       res.status(500).json(errorResponse);
     }

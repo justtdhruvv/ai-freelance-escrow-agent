@@ -75,11 +75,11 @@ export class VerificationContractController {
   };
 
   approveClient = async (req: Request, res: Response): Promise<void> => {
-    logger.request('POST', `/verification-contract/${req.params.contractId}/approve-client`);
+    logger.request('POST', `/verification-contract/${req.params.verification_contract_id}/approve-client`);
     
     try {
       const user = (req as any).user;
-      const { contractId } = req.params;
+      const { verification_contract_id } = req.params;
       
       if (!user) {
         const errorResponse = { error: 'User not authenticated' };
@@ -87,14 +87,14 @@ export class VerificationContractController {
         return;
       }
 
-      if (!contractId || Array.isArray(contractId)) {
-        const errorResponse = { error: 'Valid Contract ID is required' };
+      if (!verification_contract_id || Array.isArray(verification_contract_id)) {
+        const errorResponse = { error: 'Valid Verification Contract ID is required' };
         res.status(400).json(errorResponse);
         return;
       }
 
       // Get contract and verify project ownership
-      const contract = await this.verificationContractService.getVerificationContractById(contractId);
+      const contract = await this.verificationContractService.getVerificationContractById(verification_contract_id);
       
       if (!contract) {
         const errorResponse = { error: 'Contract not found' };
@@ -110,13 +110,14 @@ export class VerificationContractController {
         return;
       }
 
+      await this.verificationContractService.lockContract(verification_contract_id);
       if (contract.locked_at) {
         const errorResponse = { error: 'Contract is already locked and cannot be modified' };
         res.status(400).json(errorResponse);
         return;
       }
 
-      const updatedContract = await this.verificationContractService.updateClientApproval(contractId);
+      const updatedContract = await this.verificationContractService.updateClientApproval(verification_contract_id);
 
       const successResponse = {
         contract_id: updatedContract!.contract_id,
@@ -134,11 +135,11 @@ export class VerificationContractController {
   };
 
   approveFreelancer = async (req: Request, res: Response): Promise<void> => {
-    logger.request('POST', `/verification-contract/${req.params.contractId}/approve-freelancer`);
+    logger.request('POST', `/verification-contract/${req.params.verification_contract_id}/approve-freelancer`);
     
     try {
       const user = (req as any).user;
-      const { contractId } = req.params;
+      const { verification_contract_id } = req.params;
       
       if (!user) {
         const errorResponse = { error: 'User not authenticated' };
@@ -146,14 +147,14 @@ export class VerificationContractController {
         return;
       }
 
-      if (!contractId || Array.isArray(contractId)) {
-        const errorResponse = { error: 'Valid Contract ID is required' };
+      if (!verification_contract_id || Array.isArray(verification_contract_id)) {
+        const errorResponse = { error: 'Valid Verification Contract ID is required' };
         res.status(400).json(errorResponse);
         return;
       }
 
       // Get contract and verify freelancer assignment
-      const contract = await this.verificationContractService.getVerificationContractById(contractId);
+      const contract = await this.verificationContractService.getVerificationContractById(verification_contract_id);
       
       if (!contract) {
         const errorResponse = { error: 'Contract not found' };
@@ -175,8 +176,10 @@ export class VerificationContractController {
         return;
       }
 
-      const updatedContract = await this.verificationContractService.updateFreelancerApproval(contractId);
+      const updatedContract = await this.verificationContractService.updateFreelancerApproval(verification_contract_id);
 
+      await this.verificationContractService.lockContract(verification_contract_id);
+      
       const successResponse = {
         contract_id: updatedContract!.contract_id,
         project_id: updatedContract!.project_id,
@@ -193,11 +196,11 @@ export class VerificationContractController {
   };
 
   lockContract = async (req: Request, res: Response): Promise<void> => {
-    logger.request('POST', `/verification-contract/${req.params.contractId}/lock`);
+    logger.request('POST', `/verification-contract/${req.params.verification_contract_id}/lock`);
     
     try {
       const user = (req as any).user;
-      const { contractId } = req.params;
+      const { verification_contract_id } = req.params;
       
       if (!user) {
         const errorResponse = { error: 'User not authenticated' };
@@ -205,13 +208,13 @@ export class VerificationContractController {
         return;
       }
 
-      if (!contractId || Array.isArray(contractId)) {
-        const errorResponse = { error: 'Valid Contract ID is required' };
+      if (!verification_contract_id || Array.isArray(verification_contract_id)) {
+        const errorResponse = { error: 'Valid Verification Contract ID is required' };
         res.status(400).json(errorResponse);
         return;
       }
 
-      const contract = await this.verificationContractService.getVerificationContractById(contractId);
+      const contract = await this.verificationContractService.getVerificationContractById(verification_contract_id);
       
       if (!contract) {
         const errorResponse = { error: 'Contract not found' };
@@ -240,7 +243,7 @@ export class VerificationContractController {
         return;
       }
 
-      const lockedContract = await this.verificationContractService.lockContract(contractId);
+      const lockedContract = await this.verificationContractService.lockContract(verification_contract_id);
 
       const successResponse = {
         contract_id: lockedContract!.contract_id,
@@ -303,6 +306,7 @@ export class VerificationContractController {
 
       const contractResponse = {
         contract_id: contract.contract_id,
+        policy: contract.policy,
         project_id: contract.project_id,
         generated_from_sop_version: contract.generated_from_sop_version,
         freelancer_approved: contract.freelancer_approved,

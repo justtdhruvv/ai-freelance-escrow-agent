@@ -6,8 +6,6 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { authService } from '../services/authService'
 
-const TOKEN_KEY = "authToken"
-
 interface FormData {
   email: string
   password: string
@@ -61,7 +59,6 @@ export default function LoginForm() {
       [name]: type === 'checkbox' ? checked : value
     }))
 
-    // Clear error while typing
     if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [name]: undefined }))
     }
@@ -75,7 +72,7 @@ export default function LoginForm() {
     setIsLoading(true)
     setErrors({})
 
-    try {
+        try {
       const response = await authService.login({
         email: formData.email,
         password: formData.password
@@ -106,75 +103,129 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    // <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
 
-      {/* Email */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Email</label>
-        <input
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          disabled={isLoading}
-          className="w-full px-4 py-3 border rounded-lg"
-          placeholder="Enter your email"
-        />
-        {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
+      >
 
-      {/* Password */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Password</label>
-
-        <div className="relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            disabled={isLoading}
-            className="w-full px-4 py-3 border rounded-lg pr-10"
-            placeholder="Enter your password"
-          />
-
-          <button
-            type="button"
-            onClick={togglePasswordVisibility}
-            className="absolute right-3 top-1/2 -translate-y-1/2"
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
+        {/* Heading */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Login to your EscrowAI account
+          </p>
         </div>
 
-        {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
-      </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-      {/* Remember me */}
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          name="rememberMe"
-          checked={formData.rememberMe}
-          onChange={handleInputChange}
-        />
-        Remember me
-      </label>
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              disabled={isLoading}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:outline-none"
+              placeholder="you@example.com"
+            />
+            {errors.email && (
+              <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            )}
+          </div>
 
-      {/* General error */}
-      {errors.general && (
-        <p className="text-red-500 text-sm">{errors.general}</p>
-      )}
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
 
-      {/* Button */}
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full py-3 bg-black text-white rounded-lg flex justify-center items-center"
-      >
-        {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
-      </button>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={isLoading}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg pr-10 focus:ring-2 focus:ring-[#AD7D56]"
+                placeholder="••••••••"
+              />
 
-    </form>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+            )}
+          </div>
+
+          {/* Remember + Forgot */}
+          <div className="flex items-center justify-between text-sm">
+            <label className="flex items-center gap-2 text-gray-600">
+              <input
+                type="checkbox"
+                name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleInputChange}
+              />
+              Remember me
+            </label>
+
+            <button
+              type="button"
+              className="text-[#AD7D56] hover:underline"
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          {/* Error */}
+          {errors.general && (
+            <p className="text-red-500 text-sm">{errors.general}</p>
+          )}
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2.5 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition flex items-center justify-center"
+          >
+            {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
+          </button>
+
+        </form>
+
+        {/* Divider */}
+        <div className="my-6 flex items-center">
+          <div className="flex-1 h-px bg-gray-200"></div>
+          <span className="px-3 text-sm text-gray-400">or</span>
+          <div className="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        {/* Sign Up */}
+        <p className="text-center text-sm text-gray-600">
+          Don’t have an account?{" "}
+          <button
+            onClick={() => router.push('/signup')}
+            className="text-[#AD7D56] font-medium hover:underline"
+          >
+            Sign up
+          </button>
+        </p>
+
+      </motion.div>
+    // </div>
   )
 }

@@ -202,7 +202,7 @@ export default function LoginForm() {
             disabled={isLoading}
             className="w-full py-2.5 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition flex items-center justify-center"
           >
-            {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
+            {isLoading ? <Loader2 className="animate-spin" /> : "Login"}
           </button>
 
         </form>

@@ -307,10 +307,12 @@ export class VerificationContractController {
       const contractResponse = {
         contract_id: contract.contract_id,
         policy: contract.policy,
+        verification_contract_id: contract.verification_contract_id,
         project_id: contract.project_id,
         generated_from_sop_version: contract.generated_from_sop_version,
         freelancer_approved: contract.freelancer_approved,
         client_approved: contract.client_approved,
+        isLocked: contract.isLocked,
         locked_at: contract.locked_at,
         created_at: contract.created_at
       };

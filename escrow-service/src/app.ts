@@ -10,6 +10,8 @@ import { clientRouter } from './modules/clients/client.routes';
 import { paymentRouter, webhookRouter } from './modules/payments/payment.routes';
 import { aiRouter } from './modules/ai/ai.routes';
 import sopRouter from './modules/sops/sop.routes';
+import submissionRouter from './modules/submissions/submission.routes';
+import aqaRouter from './modules/aqa/aqa.routes';
 
 const app = express();
 
@@ -39,5 +41,7 @@ app.use('/payments', paymentRouter);
 app.use('/payments', webhookRouter);
 app.use('/ai', aiRouter);
 app.use('/sops', sopRouter);
+app.use('/', submissionRouter);
+app.use('/', aqaRouter);
 
 export default app;

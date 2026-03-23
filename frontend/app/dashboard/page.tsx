@@ -238,7 +238,11 @@ export default function DashboardPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {clientMap[project.client_id] || 'Unknown Client'}
+                    {clientMap[project.client_id]
+                      ? clientMap[project.client_id]
+                      : clients.length === 0
+                        ? 'Loading...'
+                        : 'Unknown Client'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ${project.total_price.toLocaleString()}

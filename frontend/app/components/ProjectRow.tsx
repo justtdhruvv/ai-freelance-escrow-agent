@@ -19,6 +19,7 @@ interface ProjectRowProps {
   clientEmail: string
   onAddProjectBrief: (project: Project) => void
   onViewProjectBrief: (project: Project) => void
+  onViewContract: (project: Project) => void
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -50,6 +51,7 @@ export default function ProjectRow({
   clientEmail,
   onAddProjectBrief,
   onViewProjectBrief,
+  onViewContract,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -110,6 +112,7 @@ export default function ProjectRow({
           clientEmail={clientEmail}
           onAddProjectBrief={onAddProjectBrief}
           onViewProjectBrief={onViewProjectBrief}
+          onViewContract={onViewContract}
           onViewProject={onViewProject}
           onEditProject={onEditProject}
           onViewMilestones={onViewMilestones}

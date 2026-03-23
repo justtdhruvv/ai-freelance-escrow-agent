@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import ProjectRow from './ProjectRow'
 import CreateProjectBriefModal from './CreateProjectBriefModal'
 import ViewProjectBriefModal from './ViewProjectBriefModal'
+import ContractModal from './ContractModal'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
@@ -25,6 +26,7 @@ export default function ProjectTable({
   const [currentPage, setCurrentPage] = useState(1)
   const [showBriefModal, setShowBriefModal] = useState(false)
   const [showViewBriefModal, setShowViewBriefModal] = useState(false)
+  const [showContractModal, setShowContractModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<any>(null)
   const itemsPerPage = 5
 
@@ -82,6 +84,11 @@ export default function ProjectTable({
     setShowViewBriefModal(true)
   }
 
+  const handleViewContract = (project: any) => {
+    setSelectedProject(project)
+    setShowContractModal(true)
+  }
+
   const handleCloseBriefModal = () => {
     setShowBriefModal(false)
     setSelectedProject(null)
@@ -89,6 +96,11 @@ export default function ProjectTable({
 
   const handleCloseViewBriefModal = () => {
     setShowViewBriefModal(false)
+    setSelectedProject(null)
+  }
+
+  const handleCloseContractModal = () => {
+    setShowContractModal(false)
     setSelectedProject(null)
   }
 
@@ -161,6 +173,7 @@ export default function ProjectTable({
                 clientEmail={clientMap[project.employer_id] || 'Unknown Client'}
                 onAddProjectBrief={handleAddProjectBrief}
                 onViewProjectBrief={handleViewProjectBrief}
+                onViewContract={handleViewContract}
                 onViewProject={onViewProject}
                 onEditProject={onEditProject}
                 onViewMilestones={onViewMilestones}
@@ -242,6 +255,14 @@ export default function ProjectTable({
       {showViewBriefModal && selectedProject && (
         <ViewProjectBriefModal
           onClose={handleCloseViewBriefModal}
+          projectId={selectedProject.project_id}
+        />
+      )}
+
+      {/* Contract Modal */}
+      {showContractModal && selectedProject && (
+        <ContractModal
+          onClose={handleCloseContractModal}
           projectId={selectedProject.project_id}
         />
       )}

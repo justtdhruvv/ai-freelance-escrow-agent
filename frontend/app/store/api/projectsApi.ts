@@ -31,10 +31,30 @@ export interface AddProjectBriefRequest {
   domain: 'code' | 'design' | 'content' | 'general'
 }
 
+export interface VerificationContract {
+  contract_id: string
+  policy: string
+  verification_contract_id: string
+  project_id: string
+  generated_from_sop_version: number
+  freelancer_approved: number
+  client_approved: number
+  locked_at: number
+  created_at: string
+  isLocked: number
+}
+
+export interface UserProfile {
+  user_id: string
+  email: string
+  role: 'employer' | 'freelancer'
+  // Add other profile fields as needed
+}
+
 export const projectsApi = createApi({
   ...baseApiConfig,
   reducerPath: 'projectsApi',
-  tagTypes: ['Project', 'Brief'],
+  tagTypes: ['Project', 'Brief', 'Contract', 'User'],
   endpoints: (builder) => ({
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',
@@ -68,6 +88,28 @@ export const projectsApi = createApi({
       }),
       invalidatesTags: (result, error, { projectId }) => [{ type: 'Project', id: projectId }],
     }),
+    getVerificationContract: builder.query<VerificationContract, string>({
+      query: (projectId) => `/projects/${projectId}/verification-contract`,
+      providesTags: ['Contract'],
+    }),
+    approveClientContract: builder.mutation<void, string>({
+      query: (verificationContractId) => ({
+        url: `/projects/verification-contract/${verificationContractId}/approve-client`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Contract'],
+    }),
+    approveFreelancerContract: builder.mutation<void, string>({
+      query: (verificationContractId) => ({
+        url: `/projects/verification-contract/${verificationContractId}/approve-freelancer`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Contract'],
+    }),
+    getUserProfile: builder.query<UserProfile, void>({
+      query: () => '/users/profile',
+      providesTags: ['User'],
+    }),
   }),
 })
 
@@ -76,4 +118,8 @@ export const {
   useGetProjectQuery,
   useCreateProjectMutation,
   useAddProjectBriefMutation,
+  useGetVerificationContractQuery,
+  useApproveClientContractMutation,
+  useApproveFreelancerContractMutation,
+  useGetUserProfileQuery,
 } = projectsApi

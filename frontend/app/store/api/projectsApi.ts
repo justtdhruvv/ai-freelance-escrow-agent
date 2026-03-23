@@ -48,7 +48,20 @@ export interface UserProfile {
   user_id: string
   email: string
   role: 'employer' | 'freelancer'
-  // Add other profile fields as needed
+  pfi_score: number
+  trust_score: number
+  pfi_history: any
+  grace_period_active: number
+  created_at: string
+  stripe_account_id: string | null
+  razorpay_account_id: string | null
+  github_token: string | null
+}
+
+export interface UpdateUserProfileRequest {
+  stripe_account_id?: string
+  razorpay_account_id?: string
+  github_token?: string
 }
 
 export interface GenerateSOPRequest {
@@ -143,6 +156,14 @@ export const projectsApi = createApi({
       query: () => '/users/profile',
       providesTags: ['User'],
     }),
+    updateUserProfile: builder.mutation<UserProfile, UpdateUserProfileRequest>({
+      query: (data) => ({
+        url: '/users/profile',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['User'],
+    }),
     generateSOP: builder.mutation<{ sop_id: string }, GenerateSOPRequest>({
       query: (data) => ({
         url: '/sops/generate',
@@ -175,6 +196,7 @@ export const {
   useApproveClientContractMutation,
   useApproveFreelancerContractMutation,
   useGetUserProfileQuery,
+  useUpdateUserProfileMutation,
   useGenerateSOPMutation,
   useGetSOPQuery,
   useGetProjectSOPsQuery,

@@ -1,22 +1,23 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  Target, 
-  Wallet, 
-  Brain, 
-  TrendingUp, 
+import {
+  LayoutDashboard,
+  FolderOpen,
+  Target,
+  Wallet,
+  Brain,
+  TrendingUp,
   Settings,
   Users,
   Menu,
   X,
   Search,
   Bell,
-  ChevronDown
+  ChevronDown,
+  User
 } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../store'
@@ -30,6 +31,7 @@ const menuItems = [
   { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/escrow' },
   { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
   { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score' },
+  { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ]
 
@@ -42,11 +44,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
-  
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     dispatch(initializeAuth())
@@ -56,7 +60,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
       setIsMobile(mobile)
-      
+
       if (mobile) {
         setSidebarCollapsed(true)
         setSidebarOpen(false)
@@ -76,6 +80,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     if (isMobile) {
       setSidebarOpen(false)
     }
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: any) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    setProfileDropdownOpen(false)
+  }, [pathname])
+
+  const handleProfile = () => {
+    setProfileDropdownOpen(false)
+    router.push('/dashboard/profile')
   }
 
   const handleLogout = () => {
@@ -100,15 +124,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <motion.div
-        className={`${
-          isMobile 
-            ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${
-                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-              }`
-            : `relative transition-all duration-300 ease-in-out ${
-                sidebarCollapsed ? 'w-16' : 'w-64'
-              } ${isMobile ? 'hidden' : 'block'}`
-        }`}
+        className={`${isMobile
+          ? `fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`
+          : `relative transition-all duration-300 ease-in-out ${sidebarCollapsed ? 'w-16' : 'w-64'
+          } ${isMobile ? 'hidden' : 'block'}`
+          }`}
       >
         <div className="bg-[#111111] h-full flex flex-col">
           {/* Logo */}
@@ -132,11 +153,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <button
                   key={item.href}
                   onClick={() => handleMenuClick(item.href)}
-                  className={`${
-                    isActive 
-                      ? 'bg-[#AD7D56] text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                  } w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200`}
+                  className={`${isActive
+                    ? 'bg-[#AD7D56] text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    } w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
@@ -218,10 +238,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                     >
-                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={handleProfile}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100">
                         Profile
                       </button>
-                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => {
+                          setProfileDropdownOpen(false)
+                          router.push('/dashboard/settings')
+                        }}
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                      >
                         Settings
                       </button>
                       <hr className="my-1 border-gray-200" />

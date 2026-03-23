@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Search, Bell, TrendingUp, Briefcase, DollarSign, Target, CheckCircle, User, MoreVertical, Eye, Plus } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
@@ -8,6 +8,7 @@ import { RootState, AppDispatch } from '../store'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { setProjects } from '../store/slices/projectSlice'
 import { useCreateProjectMutation } from '../store/api/projectsApi'
+import { useGetClientsQuery } from '../store/api/clientsApi'
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -23,12 +24,24 @@ export default function DashboardPage() {
   // Fetch projects using RTK Query
   const { data: projectsData, isLoading, error } = useGetProjectsQuery()
   const [createProject, { isLoading: isCreating }] = useCreateProjectMutation()
+  const { data: clientsData } = useGetClientsQuery()
+  const clients = clientsData?.clients || []
 
   useEffect(() => {
     if (projectsData) {
       dispatch(setProjects(projectsData))
     }
   }, [projectsData, dispatch])
+
+  const clientMap = useMemo(() => {
+    const map: Record<string, string> = {}
+
+    clients.forEach((c: any) => {
+      map[c.user_id] = c.email
+    })
+
+    return map
+  }, [clients])
 
   // Dummy stats data based on new structure
   const stats = [
@@ -69,7 +82,7 @@ export default function DashboardPage() {
       'completed': { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       'disputed': { bg: 'bg-red-100', text: 'text-red-800', label: 'Disputed' }
     }
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
@@ -106,7 +119,7 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-red-600 mb-4">Failed to load dashboard data</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344]"
           >
@@ -116,6 +129,8 @@ export default function DashboardPage() {
       </div>
     )
   }
+
+
 
   return (
     <div className="p-6 space-y-6">
@@ -185,7 +200,7 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -223,7 +238,7 @@ export default function DashboardPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {project.client_id || 'N/A'}
+                    {clientMap[project.client_id] || 'Unknown Client'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     ${project.total_price.toLocaleString()}

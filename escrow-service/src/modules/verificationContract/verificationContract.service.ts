@@ -74,10 +74,12 @@ export class VerificationContractService {
         .select(
           'c.contract_id',
           'c.policy',
+          'vc.verification_contract_id',
           'vc.project_id',
           'vc.generated_from_sop_version',
           'vc.freelancer_approved',
           'vc.client_approved',
+          'vc.isLocked',
           'vc.locked_at',
           'vc.created_at'
         )
@@ -88,10 +90,12 @@ export class VerificationContractService {
       return {
         contract_id: contract.contract_id,
         policy: contract.policy,
+        verification_contract_id: contract.verification_contract_id,
         project_id: contract.project_id,
         generated_from_sop_version: contract.generated_from_sop_version,
         freelancer_approved: contract.freelancer_approved,
         client_approved: contract.client_approved,
+        isLocked: contract.isLocked,
         locked_at: contract.locked_at,
         created_at: contract.created_at
       };

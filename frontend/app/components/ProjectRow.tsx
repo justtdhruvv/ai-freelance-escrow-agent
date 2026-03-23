@@ -86,8 +86,10 @@ export default function ProjectRow({
       </td>
 
       {/* Client */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {clientEmail}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-600 truncate" title={clientEmail}>
+          {clientEmail}
+        </div>
       </td>
 
       {/* Budget */}
@@ -102,29 +104,31 @@ export default function ProjectRow({
 
       {/* Status */}
       <td className="px-6 py-4 whitespace-nowrap">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
           {project.status}
         </span>
       </td>
 
       {/* Actions */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        <ProjectActions
-          project={project}
-          clientEmail={clientEmail}
-          onAddProjectBrief={onAddProjectBrief}
-          onViewProjectBrief={onViewProjectBrief}
-          onViewContract={onViewContract}
-          onCreateSOP={onCreateSOP}
-          onViewProject={onViewProject}
-          onEditProject={onEditProject}
-          onViewMilestones={onViewMilestones}
-          onFundEscrow={onFundEscrow}
-          onReleasePayment={onReleasePayment}
-          onOpenDispute={onOpenDispute}
-          onMessageFreelancer={onMessageFreelancer}
-          onDeleteProject={onDeleteProject}
-        />
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex justify-center">
+          <ProjectActions
+            project={project}
+            clientEmail={clientEmail}
+            onAddProjectBrief={onAddProjectBrief}
+            onViewProjectBrief={onViewProjectBrief}
+            onViewContract={onViewContract}
+            onCreateSOP={onCreateSOP}
+            onViewProject={onViewProject}
+            onEditProject={onEditProject}
+            onViewMilestones={onViewMilestones}
+            onFundEscrow={onFundEscrow}
+            onReleasePayment={onReleasePayment}
+            onOpenDispute={onOpenDispute}
+            onMessageFreelancer={onMessageFreelancer}
+            onDeleteProject={onDeleteProject}
+          />
+        </div>
       </td>
     </motion.tr>
   )

@@ -157,23 +157,23 @@ export default function ProjectTable({
 
   return (
     <motion.div
-      className="bg-white rounded-xl shadow-sm border border-gray-100"
+      className="bg-white rounded-xl shadow-sm border border-gray-100 min-h-[70vh] flex flex-col"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
     >
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="flex-1 overflow-hidden">
+        <table className="w-full table-fixed">
 
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Project</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Client</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Budget</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Timeline</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[25%]">Project</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[20%]">Client</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[15%]">Budget</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[10%]">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[10%]">Status</th>
+              <th className="px-6 py-3 text-center text-xs font-medium text-gray-600 w-[20%]">Actions</th>
             </tr>
           </thead>
 
@@ -203,72 +203,67 @@ export default function ProjectTable({
         </table>
       </div>
 
-      {/* Empty */}
+      {/* Empty State */}
       {filteredProjects.length === 0 && (
-        <div className="text-center py-16 text-gray-500">
-          No projects found 🚀
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No projects found</h3>
+            <p className="text-gray-500">Get started by creating your first project</p>
+          </div>
         </div>
       )}
-
-      {/* Header with Create Project button */}
-      {/* <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
-        <button
-          onClick={onCreateProject}
-          className="px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Create Project
-        </button>
-      </div> */}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 py-6">
+        <div className="border-t border-gray-100 px-6 py-4">
+          <div className="flex justify-center items-center gap-2">
 
-          {/* Prev */}
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+            {/* Prev */}
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          {/* Numbers */}
-          {getPageNumbers().map((page, i) =>
-            page === "..." ? (
-              <span key={i} className="px-2 text-gray-400">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page as number)}
-                className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all
-                  ${
-                    currentPage === page
+            {/* Numbers */}
+            {getPageNumbers().map((page, i) =>
+              page === "..." ? (
+                <span key={i} className="px-2 text-gray-400">...</span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page as number)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-full text-sm transition-all
+                    ${currentPage === page
                       ? 'bg-[#AD7D56] text-white shadow-md'
                       : 'border border-gray-200 text-gray-600 hover:bg-gray-100'
-                  }
-                `}
-              >
-                {page}
-              </button>
-            )
-          )}
+                    }
+                  `}
+                >
+                  {page}
+                </button>
+              )
+            )}
 
-          {/* Next */}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            {/* Next */}
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-100 disabled:opacity-40 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
 
+          </div>
         </div>
       )}
 
-      {/* Project Brief Modal */}
+      {/* Modals */}
       {showBriefModal && selectedProject && (
         <CreateProjectBriefModal
           onClose={handleCloseBriefModal}
@@ -277,7 +272,6 @@ export default function ProjectTable({
         />
       )}
 
-      {/* View Project Brief Modal */}
       {showViewBriefModal && selectedProject && (
         <ViewProjectBriefModal
           onClose={handleCloseViewBriefModal}
@@ -285,7 +279,6 @@ export default function ProjectTable({
         />
       )}
 
-      {/* Contract Modal */}
       {showContractModal && selectedProject && (
         <ContractModal
           onClose={handleCloseContractModal}
@@ -293,7 +286,6 @@ export default function ProjectTable({
         />
       )}
 
-      {/* SOP Modal */}
       {showSOPModal && selectedProject && (
         <SOPModal
           onClose={handleCloseSOPModal}

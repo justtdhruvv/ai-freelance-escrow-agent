@@ -158,7 +158,7 @@ export default function ProjectActions({
 
             {/* Dropdown */}
             <motion.div
-              className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
+              className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden"
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}

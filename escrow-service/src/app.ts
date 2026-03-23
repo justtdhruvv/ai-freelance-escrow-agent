@@ -9,6 +9,7 @@ import { userRouter } from './modules/users/user.routes';
 import { clientRouter } from './modules/clients/client.routes';
 import { paymentRouter, webhookRouter } from './modules/payments/payment.routes';
 import { aiRouter } from './modules/ai/ai.routes';
+import sopRouter from './modules/sops/sop.routes';
 
 const app = express();
 
@@ -37,5 +38,6 @@ app.use('/clients', clientRouter);
 app.use('/payments', paymentRouter);
 app.use('/payments', webhookRouter);
 app.use('/ai', aiRouter);
+app.use('/sops', sopRouter);
 
 export default app;

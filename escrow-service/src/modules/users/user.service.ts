@@ -14,6 +14,9 @@ export interface User {
   trust_score?: number;
   pfi_history?: any;
   grace_period_active?: boolean;
+  razorpay_account_id?: string;
+  stripe_account_id?: string;
+  github_token?: string;
   created_at?: Date;
 }
 
@@ -24,6 +27,12 @@ export interface CreateClientInput {
 export interface CreateClientResult {
   user: User;
   generatedPassword: string;
+}
+
+export interface UpdateUserInput {
+  stripe_account_id?: string;
+  razorpay_account_id?: string;
+  github_token?: string;
 }
 
 export class UserService {
@@ -149,6 +158,52 @@ export class UserService {
     } catch (error) {
       logger.error('Error finding user by ID', error);
       throw new Error('Error finding user by ID');
+    }
+  }
+
+  async updateUser(user_id: string, updateData: UpdateUserInput): Promise<User> {
+    try {
+      // Remove undefined fields from update data
+      const filteredData: any = {};
+      
+      if (updateData.stripe_account_id !== undefined) {
+        filteredData.stripe_account_id = updateData.stripe_account_id;
+      }
+      
+      if (updateData.razorpay_account_id !== undefined) {
+        filteredData.razorpay_account_id = updateData.razorpay_account_id;
+      }
+      
+      if (updateData.github_token !== undefined) {
+        filteredData.github_token = updateData.github_token;
+      }
+
+      // Only update if there are fields to update
+      if (Object.keys(filteredData).length === 0) {
+        throw new Error('No valid fields to update');
+      }
+
+      // Update user
+      await db('users')
+        .where({ user_id })
+        .update(filteredData);
+
+      // Get updated user
+      const updatedUser = await this.getUserById(user_id);
+      
+      if (!updatedUser) {
+        throw new Error('Failed to retrieve updated user');
+      }
+
+      logger.info('User updated successfully', {
+        user_id,
+        updated_fields: Object.keys(filteredData)
+      });
+
+      return updatedUser;
+    } catch (error) {
+      logger.error('Error updating user', error);
+      throw error;
     }
   }
 }

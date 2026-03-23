@@ -51,10 +51,43 @@ export interface UserProfile {
   // Add other profile fields as needed
 }
 
+export interface GenerateSOPRequest {
+  project_id: string
+  raw_text: string
+  domain: string
+  timeline_days: number
+}
+
+export interface SOP {
+  sop_id: string
+  project_id: string
+  version: number
+  content_html: string
+  freelancer_approved: number
+  client_approved: number
+  locked_at: string | null
+  edit_history: any
+  price_set: any
+  created_at: string
+}
+
+export interface Milestone {
+  milestone_id: string
+  project_id: string
+  title: string
+  deadline: string
+  payment_amount: number
+  status: string
+  revisions_used: number
+  max_revisions: number
+  created_at: string
+  sop_id: string
+}
+
 export const projectsApi = createApi({
   ...baseApiConfig,
   reducerPath: 'projectsApi',
-  tagTypes: ['Project', 'Brief', 'Contract', 'User'],
+  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP'],
   endpoints: (builder) => ({
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',
@@ -110,6 +143,26 @@ export const projectsApi = createApi({
       query: () => '/users/profile',
       providesTags: ['User'],
     }),
+    generateSOP: builder.mutation<{ sop_id: string }, GenerateSOPRequest>({
+      query: (data) => ({
+        url: '/sops/generate',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['SOP'],
+    }),
+    getSOP: builder.query<SOP, string>({
+      query: (sopId) => `/sops/${sopId}`,
+      providesTags: ['SOP'],
+    }),
+    getProjectSOPs: builder.query<SOP[], string>({
+      query: (projectId) => `/sops/project/${projectId}`,
+      providesTags: ['SOP'],
+    }),
+    getSOPMilestones: builder.query<Milestone[], string>({
+      query: (sopId) => `/sops/${sopId}/milestones`,
+      providesTags: ['SOP'],
+    }),
   }),
 })
 
@@ -122,4 +175,8 @@ export const {
   useApproveClientContractMutation,
   useApproveFreelancerContractMutation,
   useGetUserProfileQuery,
+  useGenerateSOPMutation,
+  useGetSOPQuery,
+  useGetProjectSOPsQuery,
+  useGetSOPMilestonesQuery,
 } = projectsApi

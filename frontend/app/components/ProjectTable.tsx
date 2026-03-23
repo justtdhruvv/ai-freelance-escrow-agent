@@ -1,11 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, FileText } from 'lucide-react'
 import ProjectRow from './ProjectRow'
 import CreateProjectBriefModal from './CreateProjectBriefModal'
 import ViewProjectBriefModal from './ViewProjectBriefModal'
 import ContractModal from './ContractModal'
+import SOPModal from './SOPModal'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
@@ -20,13 +21,15 @@ export default function ProjectTable({
   onReleasePayment,
   onOpenDispute,
   onMessageFreelancer,
-  onDeleteProject
+  onDeleteProject,
+  onCreateProject
 }: any) {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [showBriefModal, setShowBriefModal] = useState(false)
   const [showViewBriefModal, setShowViewBriefModal] = useState(false)
   const [showContractModal, setShowContractModal] = useState(false)
+  const [showSOPModal, setShowSOPModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<any>(null)
   const itemsPerPage = 5
 
@@ -89,6 +92,11 @@ export default function ProjectTable({
     setShowContractModal(true)
   }
 
+  const handleCreateSOP = (project: any) => {
+    setSelectedProject(project)
+    setShowSOPModal(true)
+  }
+
   const handleCloseBriefModal = () => {
     setShowBriefModal(false)
     setSelectedProject(null)
@@ -101,6 +109,11 @@ export default function ProjectTable({
 
   const handleCloseContractModal = () => {
     setShowContractModal(false)
+    setSelectedProject(null)
+  }
+
+  const handleCloseSOPModal = () => {
+    setShowSOPModal(false)
     setSelectedProject(null)
   }
 
@@ -174,6 +187,7 @@ export default function ProjectTable({
                 onAddProjectBrief={handleAddProjectBrief}
                 onViewProjectBrief={handleViewProjectBrief}
                 onViewContract={handleViewContract}
+                onCreateSOP={handleCreateSOP}
                 onViewProject={onViewProject}
                 onEditProject={onEditProject}
                 onViewMilestones={onViewMilestones}
@@ -195,6 +209,18 @@ export default function ProjectTable({
           No projects found 🚀
         </div>
       )}
+
+      {/* Header with Create Project button */}
+      {/* <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+        <button
+          onClick={onCreateProject}
+          className="px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors flex items-center gap-2"
+        >
+          <Plus className="w-4 h-4" />
+          Create Project
+        </button>
+      </div> */}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -263,6 +289,14 @@ export default function ProjectTable({
       {showContractModal && selectedProject && (
         <ContractModal
           onClose={handleCloseContractModal}
+          projectId={selectedProject.project_id}
+        />
+      )}
+
+      {/* SOP Modal */}
+      {showSOPModal && selectedProject && (
+        <SOPModal
+          onClose={handleCloseSOPModal}
           projectId={selectedProject.project_id}
         />
       )}

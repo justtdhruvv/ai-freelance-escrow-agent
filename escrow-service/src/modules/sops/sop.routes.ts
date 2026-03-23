@@ -1,0 +1,26 @@
+import { Router } from 'express';
+import { SOPController } from './sop.controller';
+import { authenticateToken } from '../../middlewares/auth.middleware';
+
+const router = Router();
+const sopController = new SOPController();
+
+// Generate and store SOP from AI
+router.post('/generate', sopController.generateSOP);
+
+// Get SOP by ID
+router.get('/:sop_id', sopController.getSOPById);
+
+// Get all SOPs for a project
+router.get('/project/:project_id', sopController.getSOPsByProjectId);
+
+// Get milestones for a SOP
+router.get('/:sop_id/milestones', sopController.getMilestonesBySOPId);
+
+// Get verification checks for a milestone
+router.get('/milestones/:milestone_id/checks', sopController.getVerificationChecksByMilestoneId);
+
+// Get verification check by ID
+router.get('/checks/:check_id', sopController.getVerificationCheckById);
+
+export default router;

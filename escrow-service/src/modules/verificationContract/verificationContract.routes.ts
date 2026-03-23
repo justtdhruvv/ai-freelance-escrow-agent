@@ -12,12 +12,12 @@ router.use(authenticateToken);
 router.get('/:projectId/verification-contract', verificationContractController.getVerificationContract);
 
 // POST /verification-contract/:contractId/approve-client - Employer approves contract
-router.post('/verification-contract/:contractId/approve-client', verificationContractController.approveClient);
+router.post('/verification-contract/:verification_contract_id/approve-client', verificationContractController.approveClient);
 
 // POST /verification-contract/:contractId/approve-freelancer - Freelancer approves contract
-router.post('/verification-contract/:contractId/approve-freelancer', verificationContractController.approveFreelancer);
+router.post('/verification-contract/:verification_contract_id/approve-freelancer', verificationContractController.approveFreelancer);
 
-// POST /verification-contract/:contractId/lock - Lock contract (both parties must approve first)
-// router.post('/verification-contract/:contractId/lock', verificationContractController.lockContract);
+// POST /verification-contract/:verification_contract_id/lock - Lock contract (both parties must approve first)
+// router.post('/verification-contract/:verification_contract_id/lock', verificationContractController.lockContract);
 
 export const verificationContractRouter = router;

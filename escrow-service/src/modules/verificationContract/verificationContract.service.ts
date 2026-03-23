@@ -48,6 +48,7 @@ export class VerificationContractService {
       } else {
         console.error('Unknown error:', error);
       }
+      throw error;
     }
   }
 

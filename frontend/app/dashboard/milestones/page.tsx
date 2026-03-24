@@ -23,15 +23,15 @@ export default function MilestonesPage() {
 
   // Debug function to track state changes
   const handleSetSelectedProjectId = (projectId: string) => {
-    // console.log('=== setSelectedProjectId called ===')
-    // console.log('New projectId:', projectId)
-    // setSelectedProjectId(projectId)
-    // console.log('selectedProjectId after set:', projectId)
+    console.log('=== setSelectedProjectId called ===')
+    console.log('New projectId:', projectId)
+    setSelectedProjectId(projectId)
+    console.log('selectedProjectId after set:', projectId)
   }
 
   const { data: projects, isLoading: projectsLoading } = useGetProjectsQuery()
 
-  // console.log('Projects data:', projects)
+  console.log('Projects data:', projects)
 
   // Submission mutation
   const [submitMilestone, { isLoading: isSubmitting }] = useSubmitMilestoneMutation()
@@ -49,20 +49,20 @@ export default function MilestonesPage() {
   useEffect(() => {
     if (selectedMilestone) {
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
-      // console.log('Looking for localStorage key:', storageKey)
+      console.log('Looking for localStorage key:', storageKey)
       const storedSubmissionId = localStorage.getItem(storageKey)
-      // console.log('Raw localStorage value:', storedSubmissionId)
-      // console.log('Type of stored value:', typeof storedSubmissionId)
+      console.log('Raw localStorage value:', storedSubmissionId)
+      console.log('Type of stored value:', typeof storedSubmissionId)
 
       if (storedSubmissionId) {
-        // console.log('Loaded submission ID from localStorage:', storedSubmissionId)
+        console.log('Loaded submission ID from localStorage:', storedSubmissionId)
         setMilestoneSubmissions(prev => ({
           ...prev,
           [selectedMilestone.milestone_id]: { submission_id: storedSubmissionId }
         }))
       } else {
-        // console.log('No submission ID found in localStorage for key:', storageKey)
-        // console.log('Available localStorage keys:', Object.keys(localStorage))
+        console.log('No submission ID found in localStorage for key:', storageKey)
+        console.log('Available localStorage keys:', Object.keys(localStorage))
       }
     }
   }, [selectedMilestone])
@@ -73,12 +73,12 @@ export default function MilestonesPage() {
     { skip: !selectedProjectId }
   )
 
-  // console.log('Debug info:', {
-  //   selectedProjectId,
-  //   projectSOPs,
-  //   sopsLoading,
-  //   sopsError
-  // })
+  console.log('Debug info:', {
+    selectedProjectId,
+    projectSOPs,
+    sopsLoading,
+    sopsError
+  })
 
   // Submission handlers
   const handleOpenSubmissionModal = (milestone: any) => {
@@ -121,27 +121,27 @@ export default function MilestonesPage() {
         data: submissionForm
       }).unwrap()
 
-      // console.log('Milestone submitted successfully:', result)
-      // console.log('Full response structure:', result)
-      // console.log('Submission object:', result.submission)
-      // console.log('Submission ID:', result.submission?.submission_id)
+      console.log('Milestone submitted successfully:', result)
+      console.log('Full response structure:', result)
+      console.log('Submission object:', result.submission)
+      console.log('Submission ID:', result.submission?.submission_id)
 
       // Save submission ID to localStorage
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
-      // console.log('Milestone object:', selectedMilestone)
-      // console.log('Milestone ID:', selectedMilestone.milestone_id)
-      // console.log('Storage key:', storageKey)
+      console.log('Milestone object:', selectedMilestone)
+      console.log('Milestone ID:', selectedMilestone.milestone_id)
+      console.log('Storage key:', storageKey)
       
       if (result && result.submission && result.submission.submission_id) {
         localStorage.setItem(storageKey, result.submission.submission_id)
-        // console.log("Saved correctly:", storageKey, result.submission.submission_id)
+        console.log("Saved correctly:", storageKey, result.submission.submission_id)
       } else {
-        // console.error("submission_id is missing!", result)
+        console.error("submission_id is missing!", result)
       }
       // Verify it was saved
       const verifySaved = localStorage.getItem(storageKey)
-      // console.log('Verification - saved value:', verifySaved)
-      // console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
+      console.log('Verification - saved value:', verifySaved)
+      console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
 
       // Track submission
       setMilestoneSubmissions(prev => ({
@@ -157,7 +157,7 @@ export default function MilestonesPage() {
 
       handleCloseSubmissionModal()
     } catch (error) {
-      // console.error('Failed to submit milestone:', error)
+      console.error('Failed to submit milestone:', error)
     }
   }
 
@@ -189,7 +189,7 @@ export default function MilestonesPage() {
     try {
       const result = await runAQAs(milestoneSubmissions[selectedMilestone.milestone_id].submission_id).unwrap()
 
-      // console.log('AQAs completed successfully:', result)
+      console.log('AQAs completed successfully:', result)
 
       // Track the AQA result
       setAqaResults(prev => ({
@@ -199,7 +199,7 @@ export default function MilestonesPage() {
 
       handleCloseAQAModal()
     } catch (error) {
-      // console.error('Failed to run AQAs:', error)
+      console.error('Failed to run AQAs:', error)
     }
   }
 
@@ -222,24 +222,24 @@ export default function MilestonesPage() {
     { skip: sopIds.length === 0 }
   )
 
-  // console.log('Milestones API debug:', {
-  //   sopIds,
-  //   firstSopId: sopIds.length > 0 ? sopIds[0] : 'none',
-  //   allMilestones,
-  //   milestonesLoading,
-  //   milestonesError
-  // })
+  console.log('Milestones API debug:', {
+    sopIds,
+    firstSopId: sopIds.length > 0 ? sopIds[0] : 'none',
+    allMilestones,
+    milestonesLoading,
+    milestonesError
+  })
 
   // Filter milestones by the selected project ID
   const filteredMilestones = allMilestones?.filter(
     milestone => milestone.project_id === selectedProjectId
   ) || []
 
-  // console.log('Filtered milestones:', {
-  //   selectedProjectId,
-  //   filteredMilestones,
-  //   count: filteredMilestones.length
-  // })
+  console.log('Filtered milestones:', {
+    selectedProjectId,
+    filteredMilestones,
+    count: filteredMilestones.length
+  })
 
   // Get a display name for the project (use email or ID)
   const getProjectDisplayName = (project: any) => {

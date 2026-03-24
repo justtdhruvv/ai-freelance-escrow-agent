@@ -116,6 +116,31 @@ export interface CreateSubmissionRequest {
   content?: string
 }
 
+export interface AQAResponse {
+  aqa_id: string
+  submission_id: string
+  milestone_id: string
+  verdict: 'passed' | 'failed'
+  pass_rate: number
+  payment_trigger: 'none' | 'partial' | 'full'
+  audit_report: {
+    aqa_id: string
+    summary: string
+    passed_checks: any[]
+    failed_checks: any[]
+    missing_items: string[]
+    comparison_table: any[]
+  }
+  all_checks: any[]
+  milestone_amount: number
+  execution_time_ms: number
+  ai_model_used: string | null
+  error_message: string | null
+  aqa_version: string
+  created_at: string
+  payment_status: 'pending' | 'paid' | 'failed'
+}
+
 export const projectsApi = createApi({
   ...baseApiConfig,
   reducerPath: 'projectsApi',
@@ -219,6 +244,17 @@ export const projectsApi = createApi({
         return error
       },
     }),
+    runAQAs: builder.mutation<AQAResponse, string>({
+      query: (submissionId) => ({
+        url: `/submissions/${submissionId}/run-aqa`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['MilestoneSubmission'],
+      transformErrorResponse: (error) => {
+        console.error('Run AQAs Error:', error)
+        return error
+      },
+    }),
   }),
 })
 
@@ -238,4 +274,5 @@ export const {
   useGetSOPMilestonesQuery,
   useGetProjectMilestonesQuery,
   useSubmitMilestoneMutation,
+  useRunAQAsMutation,
 } = projectsApi

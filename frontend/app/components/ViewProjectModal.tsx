@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, DollarSign, Target, User, FileText, TrendingUp } from 'lucide-react'
+import { useMemo } from 'react'
+import { useGetClientsQuery } from '../store/api/clientsApi'
 
 interface Project {
   id: string
@@ -45,13 +47,28 @@ const mockTimeline = [
   { date: '2024-02-20', event: 'Testing Phase Started', type: 'progress' }
 ]
 
+
+
 export default function ViewProjectModal({ project, onClose }: ViewProjectModalProps) {
+
+    const { data: clientsData } = useGetClientsQuery()
+  const clients = clientsData?.clients || []
+
+    const clientMap = useMemo(() => {
+    const map: Record<string, string> = {}
+
+    clients.forEach((c: any) => {
+      map[c.user_id] = c.email
+    })
+
+    return map
+  }, [clients])
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-black bg-opacity-50"
+          className="absolute inset-0 bg-black/20 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -97,23 +114,29 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                   <User className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Client</p>
-                    <p className="font-medium text-[#111111]">{project.client}</p>
+                    <p className="font-medium text-[#111111]">{clientMap[project.employer_id]
+                      ? clientMap[project.employer_id]
+                      : clients.length === 0
+                        ? 'Loading...'
+                        : 'Unknown Client'}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* <div className="flex items-center gap-3">
                   <User className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Freelancer</p>
                     <p className="font-medium text-[#111111]">{project.freelancer}</p>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="flex items-center gap-3">
                   <DollarSign className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Total Escrow Amount</p>
-                    <p className="font-medium text-[#111111]">${project.totalEscrowAmount.toLocaleString()}</p>
+                    <p className="font-medium text-[#111111]">
+                      ${Number(project.totalEscrowAmount || 0).toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -123,7 +146,7 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                   <Calendar className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Start Date</p>
-                    <p className="font-medium text-[#111111]">{project.startDate || 'N/A'}</p>
+                    <p className="font-medium text-[#111111]">{new Date(project.created_at || '').toLocaleDateString()}</p>
                   </div>
                 </div>
 
@@ -131,7 +154,7 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                   <Calendar className="w-5 h-5 text-gray-400" />
                   <div>
                     <p className="text-sm text-gray-600">Deadline</p>
-                    <p className="font-medium text-[#111111]">{project.deadline || 'N/A'}</p>
+                    <p className="font-medium text-[#111111]">{project.timeline_days} days</p>
                   </div>
                 </div>
 
@@ -168,8 +191,8 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                   <span className="font-medium text-[#111111]">{project.progress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-[#AD7D56] h-3 rounded-full transition-all duration-500" 
+                  <div
+                    className="bg-[#AD7D56] h-3 rounded-full transition-all duration-500"
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
@@ -192,11 +215,10 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-[#111111]">${milestone.amount.toLocaleString()}</p>
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          milestone.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${milestone.status === 'completed' ? 'bg-green-100 text-green-800' :
                           milestone.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                            'bg-gray-100 text-gray-800'
+                          }`}>
                           {milestone.status.replace('-', ' ').charAt(0).toUpperCase() + milestone.status.slice(1).replace('-', ' ')}
                         </span>
                       </div>
@@ -216,11 +238,10 @@ export default function ViewProjectModal({ project, onClose }: ViewProjectModalP
                 {mockTimeline.map((item, index) => (
                   <div key={index} className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className={`w-3 h-3 rounded-full ${
-                        item.type === 'start' ? 'bg-green-500' :
+                      <div className={`w-3 h-3 rounded-full ${item.type === 'start' ? 'bg-green-500' :
                         item.type === 'milestone' ? 'bg-blue-500' :
-                        'bg-gray-400'
-                      }`} />
+                          'bg-gray-400'
+                        }`} />
                       {index < mockTimeline.length - 1 && (
                         <div className="w-0.5 h-16 bg-gray-200 mt-1" />
                       )}

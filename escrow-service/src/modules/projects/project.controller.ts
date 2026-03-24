@@ -23,7 +23,7 @@ export class ProjectController {
         return;
       }
 
-      const { name, client_id, total_price, timeline_days, description }: CreateProjectInput = req.body;
+      const { name, client_id, total_price, timeline_days, description, repo_link }: CreateProjectInput = req.body;
 
       // Validate client_id
       if (!client_id || typeof client_id !== 'string' || client_id.trim().length === 0) {
@@ -60,6 +60,7 @@ export class ProjectController {
         client_id,
         total_price,
         timeline_days,
+        repo_link,
         freelancer_id: user.userId,
         employer_id: client_id,  // client_id is actually the employer_id
         description
@@ -68,6 +69,7 @@ export class ProjectController {
       const successResponse = {
         name: project.name,
         project_id: project.project_id,
+        repo_link: project.repo_link,
         employer_id: project.employer_id,
         freelancer_id: project.freelancer_id,
         description: project.description,
@@ -127,7 +129,8 @@ export class ProjectController {
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         stripe_payment_intent_id: project.stripe_payment_intent_id,
-        created_at: project.created_at
+        created_at: project.created_at,
+        repo_link: project.repo_link
       }));
 
       res.status(200).json(projectsResponse);
@@ -187,7 +190,8 @@ export class ProjectController {
         stripe_payment_intent_id: project.stripe_payment_intent_id,
         created_at: project.created_at,
         name: project.name,
-        description: project.description
+        description: project.description,
+        repo_link: project.repo_link
       };
 
       res.status(200).json(projectResponse);

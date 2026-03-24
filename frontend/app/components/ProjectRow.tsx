@@ -78,7 +78,7 @@ export default function ProjectRow({
         <div>
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-[#111111]">
-              Project #{project.project_id.substring(0, 8)}
+              {project.name.substring(0, 8)}
             </p>
           </div>
           <p className="text-xs text-gray-500 mt-1">

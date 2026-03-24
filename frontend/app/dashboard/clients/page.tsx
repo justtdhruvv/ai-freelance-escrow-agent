@@ -74,7 +74,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F1EC] p-6">
+    <div className="bg-white min-h-screen bg-[#F5F1EC] p-6">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -82,7 +82,7 @@ export default function ClientsPage() {
         transition={{ duration: 0.5 }}
         className="mb-8"
       >
-        <div>
+        <div >
           <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-600 mt-2">Manage your clients and their trust scores</p>
         </div>

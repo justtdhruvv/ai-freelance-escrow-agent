@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Target, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, Github, ExternalLink, Send, Play } from 'lucide-react'
 import { useGetProjectsQuery, useGetProjectMilestonesQuery, useGetProjectSOPsQuery, useGetSOPMilestonesQuery, useSubmitMilestoneMutation, useRunAQAsMutation } from '../../store/api/projectsApi'
@@ -19,7 +19,7 @@ export default function MilestonesPage() {
   const [milestoneSubmissions, setMilestoneSubmissions] = useState<Record<string, any>>({})
   const [aqaResults, setAqaResults] = useState<Record<string, any>>({})
   const [milestoneStatuses, setMilestoneStatuses] = useState<Record<string, string>>({})
-  
+
   // Debug function to track state changes
   const handleSetSelectedProjectId = (projectId: string) => {
     console.log('=== setSelectedProjectId called ===')
@@ -27,17 +27,39 @@ export default function MilestonesPage() {
     setSelectedProjectId(projectId)
     console.log('selectedProjectId after set:', projectId)
   }
-  
+
   const { data: projects, isLoading: projectsLoading } = useGetProjectsQuery()
 
-console.log('Projects data:', projects)
+  console.log('Projects data:', projects)
 
   // Submission mutation
   const [submitMilestone, { isLoading: isSubmitting }] = useSubmitMilestoneMutation()
-  
+
   // AQAs mutation
   const [runAQAs, { isLoading: isRunningAQAs }] = useRunAQAsMutation()
-  
+
+  // Load submission ID from localStorage on component mount and when milestone changes
+  useEffect(() => {
+    if (selectedMilestone) {
+      const storageKey = `submissionId_${selectedMilestone.milestone_id}`
+      console.log('Looking for localStorage key:', storageKey)
+      const storedSubmissionId = localStorage.getItem(storageKey)
+      console.log('Raw localStorage value:', storedSubmissionId)
+      console.log('Type of stored value:', typeof storedSubmissionId)
+
+      if (storedSubmissionId) {
+        console.log('Loaded submission ID from localStorage:', storedSubmissionId)
+        setMilestoneSubmissions(prev => ({
+          ...prev,
+          [selectedMilestone.milestone_id]: { submission_id: storedSubmissionId }
+        }))
+      } else {
+        console.log('No submission ID found in localStorage for key:', storageKey)
+        console.log('Available localStorage keys:', Object.keys(localStorage))
+      }
+    }
+  }, [selectedMilestone])
+
   // Get SOPs for the selected project to find SOP IDs
   const { data: projectSOPs, isLoading: sopsLoading, error: sopsError } = useGetProjectSOPsQuery(
     selectedProjectId,
@@ -82,7 +104,7 @@ console.log('Projects data:', projects)
 
   const handleSubmitMilestone = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!selectedProjectId || !selectedMilestone) return
 
     try {
@@ -93,11 +115,31 @@ console.log('Projects data:', projects)
       }).unwrap()
 
       console.log('Milestone submitted successfully:', result)
+      console.log('Full response structure:', result)
+      console.log('Submission object:', result.submission)
+      console.log('Submission ID:', result.submission?.submission_id)
+
+      // Save submission ID to localStorage
+      const storageKey = `submissionId_${selectedMilestone.milestone_id}`
+      console.log('Milestone object:', selectedMilestone)
+      console.log('Milestone ID:', selectedMilestone.milestone_id)
+      console.log('Storage key:', storageKey)
       
+      if (result && result.submission && result.submission.submission_id) {
+        localStorage.setItem(storageKey, result.submission.submission_id)
+        console.log("Saved correctly:", storageKey, result.submission.submission_id)
+      } else {
+        console.error("submission_id is missing!", result)
+      }
+      // Verify it was saved
+      const verifySaved = localStorage.getItem(storageKey)
+      console.log('Verification - saved value:', verifySaved)
+      console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
+
       // Track submission
       setMilestoneSubmissions(prev => ({
         ...prev,
-        [selectedMilestone.milestone_id]: result
+        [selectedMilestone.milestone_id]: result.submission
       }))
 
       // Update milestone status to submitted
@@ -128,9 +170,9 @@ console.log('Projects data:', projects)
 
     try {
       const result = await runAQAs(milestoneSubmissions[selectedMilestone.milestone_id].submission_id).unwrap()
-      
+
       console.log('AQAs completed successfully:', result)
-      
+
       // Track the AQA result
       setAqaResults(prev => ({
         ...prev,
@@ -155,7 +197,7 @@ console.log('Projects data:', projects)
 
   // Get milestones for each SOP in the project
   const sopIds = projectSOPs?.map((sop, index) => sop.sop_id) || []
-  
+
   // Fetch milestones for all SOPs in the project (we'll filter by project_id)
   const { data: allMilestones, isLoading: milestonesLoading, error: milestonesError } = useGetSOPMilestonesQuery(
     sopIds.length > 0 ? sopIds[0] : '', // Use first SOP ID to fetch milestones
@@ -243,7 +285,7 @@ console.log('Projects data:', projects)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="bg-white min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -251,13 +293,13 @@ console.log('Projects data:', projects)
           transition={{ duration: 0.5 }}
         >
           {/* Header */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Milestones</h1>
                 <p className="text-sm text-gray-500 mt-1">Track project milestones and deadlines</p>
               </div>
-              
+
               {/* Project Selector */}
               <div className="relative">
                 <button
@@ -269,7 +311,7 @@ console.log('Projects data:', projects)
                   </span>
                   <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 </button>
-                
+
                 {dropdownOpen && (
                   <div className="absolute right-0 mt-2 w-full sm:w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10 max-h-60 overflow-y-auto">
                     {projects?.length === 0 ? (
@@ -441,11 +483,10 @@ console.log('Projects data:', projects)
                             </button>
                             <button
                               onClick={() => handleOpenAQAModal(milestone)}
-                              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
-                                hasSubmission(milestone.milestone_id)
-                                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                                  : 'bg-blue-500 text-white hover:bg-blue-600'
-                              }`}
+                              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${hasSubmission(milestone.milestone_id)
+                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                }`}
                             >
                               <Play className="w-3 h-3" />
                               Run AQAs
@@ -626,11 +667,10 @@ console.log('Projects data:', projects)
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-900">Verdict:</span>
-                        <span className={`text-sm font-medium ${
-                          aqaResults[selectedMilestone.milestone_id].verdict === 'passed' 
-                            ? 'text-green-600' 
-                            : 'text-red-600'
-                        }`}>
+                        <span className={`text-sm font-medium ${aqaResults[selectedMilestone.milestone_id].verdict === 'passed'
+                          ? 'text-green-600'
+                          : 'text-red-600'
+                          }`}>
                           {aqaResults[selectedMilestone.milestone_id].verdict}
                         </span>
                       </div>
@@ -653,7 +693,7 @@ console.log('Projects data:', projects)
                   <div>
                     <h4 className="text-sm font-medium text-blue-900">About AQAs</h4>
                     <p className="text-sm text-blue-700 mt-1">
-                      Automated Quality Assurance checks your submission against predefined criteria. 
+                      Automated Quality Assurance checks your submission against predefined criteria.
                       This process may take a few minutes to complete.
                     </p>
                   </div>
@@ -671,11 +711,10 @@ console.log('Projects data:', projects)
                 <button
                   onClick={handleRunAQAs}
                   disabled={isRunningAQAs}
-                  className={`flex-1 px-4 py-2 rounded-lg transition ${
-                    !isRunningAQAs
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                  className={`flex-1 px-4 py-2 rounded-lg transition ${!isRunningAQAs
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
                 >
                   {isRunningAQAs ? "Running AQAs..." : "Run AQAs"}
                 </button>

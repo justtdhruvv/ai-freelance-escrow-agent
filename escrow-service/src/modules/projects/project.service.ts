@@ -4,6 +4,7 @@ import { logger } from '../../utils/logger';
 import { AIService } from '../ai/ai.service';
 
 export interface Project {
+  repo_link: any;
   description: string;
   name: string;
   project_id: string;
@@ -23,6 +24,7 @@ export interface CreateProjectInput {
   client_id: string;
   total_price: number;
   timeline_days?: number;
+  repo_link?: string;
 }
 
 export interface CreateProjectData extends CreateProjectInput {
@@ -46,6 +48,7 @@ export class ProjectService {
           name: projectData.name,
           project_id,
           employer_id: projectData.employer_id,
+          repo_link: projectData.repo_link,
           freelancer_id: projectData.freelancer_id,
           description: projectData.description,
           total_price: projectData.total_price,

@@ -121,7 +121,9 @@ export class ProjectController {
         employer_id: project.employer_id,
         employer_email: project.employer_email,
         freelancer_id: project.freelancer_id,
+        name: project.name,
         status: project.status,
+        description: project.description,
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         stripe_payment_intent_id: project.stripe_payment_intent_id,
@@ -183,7 +185,9 @@ export class ProjectController {
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         stripe_payment_intent_id: project.stripe_payment_intent_id,
-        created_at: project.created_at
+        created_at: project.created_at,
+        name: project.name,
+        description: project.description
       };
 
       res.status(200).json(projectResponse);

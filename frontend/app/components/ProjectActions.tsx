@@ -2,26 +2,25 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MoreHorizontal, Eye, Edit, Target, Wallet, AlertTriangle, MessageSquare, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Eye, Edit, Target, Wallet, AlertTriangle, MessageSquare, Trash2, FilePlus, FileText, FileCheck, FileCode } from 'lucide-react'
 
 interface Project {
-  id: string
-  name: string
-  client: string
-  freelancer: string
-  totalEscrowAmount: number
-  milestones: number
-  status: 'active' | 'completed' | 'review' | 'disputed'
-  progress: number
-  description?: string
-  deadline?: string
-  startDate?: string
-  budget?: number
-  riskScore?: number
+  project_id: string
+  employer_id: string
+  freelancer_id: string
+  status: 'draft' | 'active' | 'completed' | 'review' | 'disputed'
+  total_price: number
+  timeline_days: number
+  created_at: string
 }
 
 interface ProjectActionsProps {
   project: Project
+  clientEmail: string
+  onAddProjectBrief: (project: Project) => void
+  onViewProjectBrief: (project: Project) => void
+  onViewContract: (project: Project) => void
+  onCreateSOP: (project: Project) => void
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -34,6 +33,11 @@ interface ProjectActionsProps {
 
 export default function ProjectActions({
   project,
+  clientEmail,
+  onAddProjectBrief,
+  onViewProjectBrief,
+  onViewContract,
+  onCreateSOP,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -62,6 +66,30 @@ export default function ProjectActions({
       label: 'Edit Project',
       action: () => onEditProject(project),
       color: 'text-gray-700'
+    },
+    {
+      icon: FilePlus,
+      label: 'Add Project Brief',
+      action: () => onAddProjectBrief(project),
+      color: 'text-blue-600'
+    },
+    {
+      icon: FileText,
+      label: 'View Project Briefs',
+      action: () => onViewProjectBrief(project),
+      color: 'text-purple-600'
+    },
+    {
+      icon: FileCheck,
+      label: 'View Contract',
+      action: () => onViewContract(project),
+      color: 'text-green-600'
+    },
+    {
+      icon: FileCode,
+      label: 'Create SOP',
+      action: () => onCreateSOP(project),
+      color: 'text-orange-600'
     },
     {
       icon: Target,
@@ -130,7 +158,7 @@ export default function ProjectActions({
 
             {/* Dropdown */}
             <motion.div
-              className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 overflow-hidden"
+              className="absolute right-0 top-8 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden"
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -10 }}

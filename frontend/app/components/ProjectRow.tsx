@@ -1,27 +1,28 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Github, ExternalLink } from 'lucide-react'
 import ProjectActions from './ProjectActions'
 
 interface Project {
-  id: string
-  name: string
-  client: string
-  freelancer: string
-  totalEscrowAmount: number
-  milestones: number
-  status: 'active' | 'completed' | 'review' | 'disputed'
-  progress: number
-  description?: string
-  deadline?: string
-  startDate?: string
-  budget?: number
-  riskScore?: number
+  project_id: string
+  employer_id: string
+  freelancer_id: string
+  status: 'draft' | 'active' | 'completed' | 'review' | 'disputed'
+  total_price: number
+  timeline_days: number
+  created_at: string
+  repo_link?: string
 }
 
 interface ProjectRowProps {
   project: Project
   index: number
+  clientEmail: string
+  onAddProjectBrief: (project: Project) => void
+  onViewProjectBrief: (project: Project) => void
+  onViewContract: (project: Project) => void
+  onCreateSOP: (project: Project) => void
   onViewProject: (project: Project) => void
   onEditProject: (project: Project) => void
   onViewMilestones: (project: Project) => void
@@ -33,6 +34,7 @@ interface ProjectRowProps {
 }
 
 const statusColors = {
+  draft: 'bg-gray-100 text-gray-800',
   active: 'bg-blue-100 text-blue-800',
   completed: 'bg-green-100 text-green-800',
   review: 'bg-yellow-100 text-yellow-800',
@@ -49,6 +51,11 @@ const getRiskColor = (riskScore: number) => {
 export default function ProjectRow({
   project,
   index,
+  clientEmail,
+  onAddProjectBrief,
+  onViewProjectBrief,
+  onViewContract,
+  onCreateSOP,
   onViewProject,
   onEditProject,
   onViewMilestones,
@@ -70,86 +77,79 @@ export default function ProjectRow({
       <td className="px-6 py-4 whitespace-nowrap">
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-[#111111]">{project.name}</p>
-            {project.riskScore && (
-              <span className={`text-xs font-medium ${getRiskColor(project.riskScore)}`}>
-                {project.riskScore}%
-              </span>
-            )}
+            <p className="text-sm font-medium text-[#111111]">
+              {project.name.substring(0, 8)}
+            </p>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-            <motion.div 
-              className="bg-[#AD7D56] h-1.5 rounded-full" 
-              style={{ width: `${project.progress}%` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${project.progress}%` }}
-              transition={{ duration: 0.8, delay: 0.5 + index * 0.1 }}
-            />
-          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Created: {new Date(project.created_at).toLocaleDateString()}
+          </p>
         </div>
       </td>
 
       {/* Client */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {project.client}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm text-gray-600 truncate" title={clientEmail}>
+          {clientEmail}
+        </div>
       </td>
 
-      {/* Freelancer */}
+      {/* Budget */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {project.freelancer}
+        ₹{project.total_price.toLocaleString()}
       </td>
 
-      {/* Total Escrow Amount */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#111111]">
-        ${project.totalEscrowAmount.toLocaleString()}
+      {/* Timeline */}
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+        {project.timeline_days} days
       </td>
 
-      {/* Milestones */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-        {project.milestones}
+      {/* Repository Link */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        {project.repo_link ? (
+          <a 
+            href={project.repo_link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            title={project.repo_link}
+          >
+            <Github className="w-4 h-4" />
+            <span className="truncate max-w-32">Repo</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        ) : (
+          <span className="text-sm text-gray-400">No repo</span>
+        )}
       </td>
 
       {/* Status */}
       <td className="px-6 py-4 whitespace-nowrap">
-        <motion.span 
-          className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[project.status]}`}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 0.2, delay: 0.3 + index * 0.05 }}
-        >
-          {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-        </motion.span>
-      </td>
-
-      {/* Progress */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex items-center gap-2">
-          <div className="w-16 bg-gray-200 rounded-full h-2">
-            <motion.div 
-              className="bg-[#AD7D56] h-2 rounded-full" 
-              style={{ width: `${project.progress}%` }}
-              initial={{ width: 0 }}
-              animate={{ width: `${project.progress}%` }}
-              transition={{ duration: 0.8, delay: 0.5 + index * 0.1 }}
-            />
-          </div>
-          <span className="text-sm text-gray-600">{project.progress}%</span>
-        </div>
+        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[project.status]}`}>
+          {project.status}
+        </span>
       </td>
 
       {/* Actions */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm">
-        <ProjectActions
-          project={project}
-          onViewProject={onViewProject}
-          onEditProject={onEditProject}
-          onViewMilestones={onViewMilestones}
-          onFundEscrow={onFundEscrow}
-          onReleasePayment={onReleasePayment}
-          onOpenDispute={onOpenDispute}
-          onMessageFreelancer={onMessageFreelancer}
-          onDeleteProject={onDeleteProject}
-        />
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex justify-center">
+          <ProjectActions
+            project={project}
+            clientEmail={clientEmail}
+            onAddProjectBrief={onAddProjectBrief}
+            onViewProjectBrief={onViewProjectBrief}
+            onViewContract={onViewContract}
+            onCreateSOP={onCreateSOP}
+            onViewProject={onViewProject}
+            onEditProject={onEditProject}
+            onViewMilestones={onViewMilestones}
+            onFundEscrow={onFundEscrow}
+            onReleasePayment={onReleasePayment}
+            onOpenDispute={onOpenDispute}
+            onMessageFreelancer={onMessageFreelancer}
+            onDeleteProject={onDeleteProject}
+          />
+        </div>
       </td>
     </motion.tr>
   )

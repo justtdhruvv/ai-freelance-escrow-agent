@@ -2,46 +2,90 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, DollarSign, FileText } from 'lucide-react'
-import { projectService, CreateProjectData } from '../services/projectService'
+import { X, Calendar, DollarSign, FileText, Users, Github } from 'lucide-react'
+import { useGetClientsQuery } from '../store/api/clientsApi'
+import { useCreateProjectMutation } from '../store/api/projectsApi'
 
 interface CreateProjectModalProps {
   onClose: () => void
-  onSuccess: () => void
+  onSuccess?: () => void // ✅ optional
 }
 
 export default function CreateProjectModal({ onClose, onSuccess }: CreateProjectModalProps) {
-  const [formData, setFormData] = useState<CreateProjectData>({
-    title: '',
-    clientEmail: '',
+
+  const [formData, setFormData] = useState({
+    name: '',
+    total_price: '',
+    timeline_days: '',
+    client_id: '',
     description: '',
-    budget: 0,
     deadline: '',
+    repo_link: ''
   })
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const { data: clientsData } = useGetClientsQuery()
+  const clients = clientsData?.clients || []
+
+  const [createProject] = useCreateProjectMutation()
+
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'budget' ? Number(value) : value
+      [name]: value
     }))
+  }
+
+  const validateForm = () => {
+    if (!formData.name) {
+      setError('Project name is required')
+      return false
+    }
+    if (!formData.client_id) {
+      setError('Select a client')
+      return false
+    }
+    if (Number(formData.total_price) <= 0) {
+      setError('Enter valid budget')
+      return false
+    }
+    if (Number(formData.timeline_days) <= 0) {
+      setError('Enter valid timeline')
+      return false
+    }
+    setError('')
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!validateForm()) return
+
     setLoading(true)
-    setError('')
 
     try {
-      await projectService.createProject(formData)
-      onSuccess()
+      const payload = {
+        name: formData.name,
+        client_id: formData.client_id,
+        total_price: Number(formData.total_price),
+        timeline_days: Number(formData.timeline_days),
+        repo_link: formData.repo_link
+      }
+
+      await createProject(payload).unwrap()
+
+      console.log("Project created:", payload)
+
+      onSuccess?.() // ✅ safe call
       onClose()
+
     } catch (err) {
-      setError('Failed to create project. Please try again.')
-      console.error('Create project error:', err)
+      console.error(err)
+      setError("Failed to create project")
     } finally {
       setLoading(false)
     }
@@ -50,6 +94,7 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -62,142 +107,137 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl"
         >
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Create New Project</h2>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
-              <X className="w-5 h-5 text-gray-500" />
+
+          <div className="flex items-center justify-between p-6 border-b">
+            <h2 className="text-xl font-semibold">Create New Project</h2>
+            <button onClick={onClose}>
+              <X />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
-            {/* Project Title */}
+            {/* Project Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Title *
+                Project Name
               </label>
               <div className="relative">
-                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  name="title"
-                  value={formData.title}
+                  name="name"
+                  value={formData.name}
                   onChange={handleInputChange}
-                  required
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                  placeholder="Enter project title"
+                  placeholder="Enter project name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
                 />
               </div>
             </div>
 
-            {/* Client Email Dropdown */}
+            {/* Client */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Client Email *
+                Client
               </label>
-              <select
-                name="clientEmail"
-                value={formData.clientEmail}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-              >
-                <option value="">Select a client</option>
-                <option value="client1@gmail.com">client1@gmail.com</option>
-                <option value="client2@gmail.com">client2@gmail.com</option>
-                <option value="client3@gmail.com">client3@gmail.com</option>
-                <option value="client4@gmail.com">client4@gmail.com</option>
-                <option value="client5@gmail.com">client5@gmail.com</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="client_id"
+                  value={formData.client_id}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none appearance-none"
+                >
+                  <option value="">Select client</option>
+                  {clients.map((c: any) => (
+                    <option key={c.user_id} value={c.user_id}>
+                      {c.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Description */}
+            {/* Budget (INR ₹) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                Budget (₹ INR)
               </label>
-              <textarea
-                name="description"
-                value={formData.description}
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  ₹
+                </span>
+                <input
+                  type="number"
+                  name="total_price"
+                  value={formData.total_price}
+                  onChange={handleInputChange}
+                  placeholder="Enter amount"
+                  className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timeline (Days)
+              </label>
+              <input
+                type="number"
+                name="timeline_days"
+                value={formData.timeline_days}
                 onChange={handleInputChange}
-                required
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent resize-none"
-                placeholder="Enter project description"
+                placeholder="e.g. 14"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
               />
             </div>
 
-            {/* Budget and Deadline */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Budget */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Budget ($)
-                </label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="number"
-                    name="budget"
-                    value={formData.budget}
-                    onChange={handleInputChange}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-
-              {/* Deadline */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Deadline
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="date"
-                    name="deadline"
-                    value={formData.deadline}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                  />
-                </div>
+            {/* Repository Link */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Repository Link
+              </label>
+              <div className="relative">
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="url"
+                  name="repo_link"
+                  value={formData.repo_link}
+                  onChange={handleInputChange}
+                  placeholder="https://github.com/username/repo"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
+                />
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <motion.button
+            {/* Buttons */}
+            <div className="flex gap-3 pt-4">
+
+              <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
               >
                 Cancel
-              </motion.button>
-              <motion.button
+              </button>
+
+              <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: loading ? 1 : 1.02 }}
-                whileTap={{ scale: loading ? 1 : 0.98 }}
+                className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition disabled:opacity-50"
               >
-                {loading ? 'Creating...' : 'Create Project'}
-              </motion.button>
+                {loading ? "Creating..." : "Create Project"}
+              </button>
+
             </div>
+
           </form>
         </motion.div>
       </div>

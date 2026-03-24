@@ -1,216 +1,166 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Plus, Filter, Pencil, Trash2 } from 'lucide-react'
-import { clientService, Client } from '../../services/clientService'
+import { Users, Plus, Search, Mail, TrendingUp, Shield, Star, MoreVertical, Eye } from 'lucide-react'
+import { useSelector, useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from '../../store'
+import { useGetClientsQuery } from '../../store/api/clientsApi'
+import { useCreateClientMutation } from '../../store/api/clientsApi'
+import ClientTable from '../../components/ClientTable'
 import CreateClientModal from '../../components/CreateClientModal'
-import EditClientModal from '../../components/EditClientModal'
-import DeleteClientModal from '../../components/DeleteClientModal'
+import { ApiDebugger } from '../../utils/apiDebugger'
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<Client[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
 
-  // Fetch clients on component mount
-  useEffect(() => {
-    fetchClients()
-  }, [])
+  // Fetch clients using RTK Query
+  const { data, isLoading, error, refetch } = useGetClientsQuery()
+  const [createClient, { isLoading: isCreating }] = useCreateClientMutation()
 
-  const fetchClients = async () => {
+  // Extract clients from response format: { clients: [...], count: number }
+  const clients = data?.clients || []
+
+  const handleCreateClient = async (email: string) => {
     try {
-      setLoading(true)
-      const data = await clientService.getClients()
-      setClients(data)
-    } catch (err) {
-      setError('Failed to load clients')
-      console.error('Fetch clients error:', err)
-    } finally {
-      setLoading(false)
+      await createClient({ email }).unwrap()
+      setShowCreateModal(false)
+      // Refetch clients list after adding
+      refetch()
+    } catch (error) {
+      console.error('Failed to create client:', error)
+      throw error
     }
   }
 
-  const filteredClients = clients.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
-  })
-
-  const handleEditClient = (client: Client) => {
-    setSelectedClient(client)
-    setShowEditModal(true)
+  // Debug function to test API
+  const runApiDiagnostics = async () => {
+    await ApiDebugger.runFullDiagnostics()
   }
 
-  const handleDeleteClient = (client: Client) => {
-    setSelectedClient(client)
-    setShowDeleteModal(true)
+  // Filter clients by email
+  const filteredClients = clients.filter(client =>
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#F5F1EC] p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-2 border-[#AD7D56] border-t-transparent rounded-full animate-spin"></div>
+          <p className="ml-3 text-gray-600">Loading clients...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F5F1EC] p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">Failed to load clients data</p>
+            <button 
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header Section */}
-      <motion.div 
-        className="mb-6"
+    <div className="bg-white min-h-screen bg-[#F5F1EC] p-6">
+      {/* Header */}
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="mb-8"
       >
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#111111]">Clients</h1>
-            <p className="text-gray-600 mt-1 text-sm md:text-base">
-              Manage all your client information
-            </p>
-          </div>
-
-          <motion.button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors w-full md:w-auto"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Plus className="w-4 h-4" />
-            Create New Client
-          </motion.button>
+        <div >
+          <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+          <p className="text-gray-600 mt-2">Manage your clients and their trust scores</p>
         </div>
       </motion.div>
 
-      {/* Search Section */}
-      <motion.div 
-        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6"
+      {/* Top Section: Search and Add Client */}
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-6 flex flex-col sm:flex-row gap-4"
       >
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
+        {/* Search Input */}
+        <div className="flex-1">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search clients..."
+              placeholder="Search clients by email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
             />
           </div>
         </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          {/* <button
+            onClick={runApiDiagnostics}
+            className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            <span>Debug API</span>
+          </button> */}
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Add Client</span>
+          </button>
+        </div>
       </motion.div>
 
-      {/* Loading State */}
-      {loading && (
-        <motion.div 
-          className="flex justify-center items-center py-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#AD7D56]"></div>
-        </motion.div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <motion.div 
-          className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <p className="text-red-600">{error}</p>
-        </motion.div>
-      )}
+      {/* Clients Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <ClientTable clients={filteredClients} />
+      </motion.div>
 
       {/* Empty State */}
-      {!loading && !error && filteredClients.length === 0 && (
-        <motion.div 
-          className="text-center py-12"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <div className="text-gray-500">
-            <p className="text-lg font-medium mb-2">No clients found</p>
-            <p className="text-sm">
-              {searchTerm ? 'Try adjusting your search terms' : 'Create your first client to get started'}
-            </p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Clients Table */}
-      {!loading && !error && filteredClients.length > 0 && (
-        <motion.div 
-          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+      {filteredClients.length === 0 && !isLoading && (
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="text-center py-12"
         >
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                    </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-900">{client.email}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEditClient(client)}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                          title="Edit"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClient(client)}
-                          className="p-1 text-gray-400 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Users className="w-8 h-8 text-gray-400" />
           </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No clients found</h3>
+          <p className="text-gray-600">
+            {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first client'}
+          </p>
         </motion.div>
       )}
 
-      {/* Modals */}
+      {/* Create Client Modal */}
       {showCreateModal && (
-        <CreateClientModal 
-          onClose={() => setShowCreateModal(false)} 
-          onSuccess={fetchClients}
-        />
-      )}
-
-      {showEditModal && selectedClient && (
-        <EditClientModal
-          client={selectedClient}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={fetchClients}
-        />
-      )}
-
-      {showDeleteModal && selectedClient && (
-        <DeleteClientModal
-          client={selectedClient}
-          onClose={() => setShowDeleteModal(false)}
-          onSuccess={fetchClients}
+        <CreateClientModal
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateClient}
+          isLoading={isCreating}
         />
       )}
     </div>

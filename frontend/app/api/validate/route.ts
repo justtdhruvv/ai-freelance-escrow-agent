@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Your backend API URL
-const BACKEND_API_URL = 'http://localhost:3001' // Replace with your actual backend URL
+const BACKEND_API_URL = 'http://localhost:3000' // Replace with your actual backend URL
 
 export async function GET(request: NextRequest) {
   try {

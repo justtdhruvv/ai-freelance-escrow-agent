@@ -122,7 +122,7 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
 export const baseApiConfig = {
   reducerPath: 'api',
   baseQuery: baseQueryWithAuth,
-  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review', 'SOP', 'Milestone'],
+  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review', 'SOP', 'Milestone', 'MilestoneSubmission', 'MilestoneChecks'],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: 30, // Refetch if data is older than 30 seconds
   refetchOnFocus: true,

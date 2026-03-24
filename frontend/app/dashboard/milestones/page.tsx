@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Target, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, Github, ExternalLink, Send, Play } from 'lucide-react'
-import { useGetProjectsQuery, useGetProjectMilestonesQuery, useGetProjectSOPsQuery, useGetSOPMilestonesQuery, useSubmitMilestoneMutation, useRunAQAsMutation } from '../../store/api/projectsApi'
+import { useGetProjectsQuery, useGetProjectMilestonesQuery, useGetProjectSOPsQuery, useGetSOPMilestonesQuery, useSubmitMilestoneMutation, useRunAQAsMutation, useGetMilestoneChecksQuery } from '../../store/api/projectsApi'
 
 export default function MilestonesPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
   const [showAQAModal, setShowAQAModal] = useState(false)
+  const [showChecksModal, setShowChecksModal] = useState(false)
   const [selectedMilestone, setSelectedMilestone] = useState<any>(null)
   const [submissionForm, setSubmissionForm] = useState({
     type: 'code' as 'code' | 'design' | 'documentation' | 'other',
@@ -22,40 +23,46 @@ export default function MilestonesPage() {
 
   // Debug function to track state changes
   const handleSetSelectedProjectId = (projectId: string) => {
-    console.log('=== setSelectedProjectId called ===')
-    console.log('New projectId:', projectId)
-    setSelectedProjectId(projectId)
-    console.log('selectedProjectId after set:', projectId)
+    // console.log('=== setSelectedProjectId called ===')
+    // console.log('New projectId:', projectId)
+    // setSelectedProjectId(projectId)
+    // console.log('selectedProjectId after set:', projectId)
   }
 
   const { data: projects, isLoading: projectsLoading } = useGetProjectsQuery()
 
-  console.log('Projects data:', projects)
+  // console.log('Projects data:', projects)
 
   // Submission mutation
   const [submitMilestone, { isLoading: isSubmitting }] = useSubmitMilestoneMutation()
 
   // AQAs mutation
   const [runAQAs, { isLoading: isRunningAQAs }] = useRunAQAsMutation()
+  
+  // Get milestone checks when checks modal is open
+  const { data: milestoneChecks, isLoading: checksLoading, error: checksError } = useGetMilestoneChecksQuery(
+    selectedMilestone?.milestone_id || '',
+    { skip: !showChecksModal || !selectedMilestone }
+  )
 
   // Load submission ID from localStorage on component mount and when milestone changes
   useEffect(() => {
     if (selectedMilestone) {
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
-      console.log('Looking for localStorage key:', storageKey)
+      // console.log('Looking for localStorage key:', storageKey)
       const storedSubmissionId = localStorage.getItem(storageKey)
-      console.log('Raw localStorage value:', storedSubmissionId)
-      console.log('Type of stored value:', typeof storedSubmissionId)
+      // console.log('Raw localStorage value:', storedSubmissionId)
+      // console.log('Type of stored value:', typeof storedSubmissionId)
 
       if (storedSubmissionId) {
-        console.log('Loaded submission ID from localStorage:', storedSubmissionId)
+        // console.log('Loaded submission ID from localStorage:', storedSubmissionId)
         setMilestoneSubmissions(prev => ({
           ...prev,
           [selectedMilestone.milestone_id]: { submission_id: storedSubmissionId }
         }))
       } else {
-        console.log('No submission ID found in localStorage for key:', storageKey)
-        console.log('Available localStorage keys:', Object.keys(localStorage))
+        // console.log('No submission ID found in localStorage for key:', storageKey)
+        // console.log('Available localStorage keys:', Object.keys(localStorage))
       }
     }
   }, [selectedMilestone])
@@ -66,12 +73,12 @@ export default function MilestonesPage() {
     { skip: !selectedProjectId }
   )
 
-  console.log('Debug info:', {
-    selectedProjectId,
-    projectSOPs,
-    sopsLoading,
-    sopsError
-  })
+  // console.log('Debug info:', {
+  //   selectedProjectId,
+  //   projectSOPs,
+  //   sopsLoading,
+  //   sopsError
+  // })
 
   // Submission handlers
   const handleOpenSubmissionModal = (milestone: any) => {
@@ -114,27 +121,27 @@ export default function MilestonesPage() {
         data: submissionForm
       }).unwrap()
 
-      console.log('Milestone submitted successfully:', result)
-      console.log('Full response structure:', result)
-      console.log('Submission object:', result.submission)
-      console.log('Submission ID:', result.submission?.submission_id)
+      // console.log('Milestone submitted successfully:', result)
+      // console.log('Full response structure:', result)
+      // console.log('Submission object:', result.submission)
+      // console.log('Submission ID:', result.submission?.submission_id)
 
       // Save submission ID to localStorage
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
-      console.log('Milestone object:', selectedMilestone)
-      console.log('Milestone ID:', selectedMilestone.milestone_id)
-      console.log('Storage key:', storageKey)
+      // console.log('Milestone object:', selectedMilestone)
+      // console.log('Milestone ID:', selectedMilestone.milestone_id)
+      // console.log('Storage key:', storageKey)
       
       if (result && result.submission && result.submission.submission_id) {
         localStorage.setItem(storageKey, result.submission.submission_id)
-        console.log("Saved correctly:", storageKey, result.submission.submission_id)
+        // console.log("Saved correctly:", storageKey, result.submission.submission_id)
       } else {
-        console.error("submission_id is missing!", result)
+        // console.error("submission_id is missing!", result)
       }
       // Verify it was saved
       const verifySaved = localStorage.getItem(storageKey)
-      console.log('Verification - saved value:', verifySaved)
-      console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
+      // console.log('Verification - saved value:', verifySaved)
+      // console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
 
       // Track submission
       setMilestoneSubmissions(prev => ({
@@ -150,7 +157,7 @@ export default function MilestonesPage() {
 
       handleCloseSubmissionModal()
     } catch (error) {
-      console.error('Failed to submit milestone:', error)
+      // console.error('Failed to submit milestone:', error)
     }
   }
 
@@ -165,13 +172,24 @@ export default function MilestonesPage() {
     setSelectedMilestone(null)
   }
 
+  // Checks handlers
+  const handleOpenChecksModal = (milestone: any) => {
+    setSelectedMilestone(milestone)
+    setShowChecksModal(true)
+  }
+
+  const handleCloseChecksModal = () => {
+    setShowChecksModal(false)
+    setSelectedMilestone(null)
+  }
+
   const handleRunAQAs = async () => {
     if (!selectedMilestone || !milestoneSubmissions[selectedMilestone.milestone_id]) return
 
     try {
       const result = await runAQAs(milestoneSubmissions[selectedMilestone.milestone_id].submission_id).unwrap()
 
-      console.log('AQAs completed successfully:', result)
+      // console.log('AQAs completed successfully:', result)
 
       // Track the AQA result
       setAqaResults(prev => ({
@@ -181,7 +199,7 @@ export default function MilestonesPage() {
 
       handleCloseAQAModal()
     } catch (error) {
-      console.error('Failed to run AQAs:', error)
+      // console.error('Failed to run AQAs:', error)
     }
   }
 
@@ -204,24 +222,24 @@ export default function MilestonesPage() {
     { skip: sopIds.length === 0 }
   )
 
-  console.log('Milestones API debug:', {
-    sopIds,
-    firstSopId: sopIds.length > 0 ? sopIds[0] : 'none',
-    allMilestones,
-    milestonesLoading,
-    milestonesError
-  })
+  // console.log('Milestones API debug:', {
+  //   sopIds,
+  //   firstSopId: sopIds.length > 0 ? sopIds[0] : 'none',
+  //   allMilestones,
+  //   milestonesLoading,
+  //   milestonesError
+  // })
 
   // Filter milestones by the selected project ID
   const filteredMilestones = allMilestones?.filter(
     milestone => milestone.project_id === selectedProjectId
   ) || []
 
-  console.log('Filtered milestones:', {
-    selectedProjectId,
-    filteredMilestones,
-    count: filteredMilestones.length
-  })
+  // console.log('Filtered milestones:', {
+  //   selectedProjectId,
+  //   filteredMilestones,
+  //   count: filteredMilestones.length
+  // })
 
   // Get a display name for the project (use email or ID)
   const getProjectDisplayName = (project: any) => {
@@ -321,10 +339,6 @@ export default function MilestonesPage() {
                         <button
                           key={project.id || `project-${index}`}
                           onClick={() => {
-                            console.log('=== PROJECT CLICKED ===')
-                            console.log('Project object:', project)
-                            console.log('Project ID:', project.project_id)
-                            console.log('Project keys:', Object.keys(project))
                             handleSetSelectedProjectId(project.project_id)
                             setDropdownOpen(false)
                           }}
@@ -474,6 +488,13 @@ export default function MilestonesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenChecksModal(milestone)}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-gray-600 text-white text-xs font-medium rounded hover:bg-gray-700 transition-colors"
+                            >
+                              <Target className="w-3 h-3" />
+                              Details
+                            </button>
                             <button
                               onClick={() => handleOpenSubmissionModal(milestone)}
                               className="inline-flex items-center gap-1 px-2 py-1 bg-[#AD7D56] text-white text-xs font-medium rounded hover:bg-[#8B6344] transition-colors"
@@ -719,6 +740,105 @@ export default function MilestonesPage() {
                   {isRunningAQAs ? "Running AQAs..." : "Run AQAs"}
                 </button>
               </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Checks Modal */}
+      {showChecksModal && selectedMilestone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleCloseChecksModal} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[80vh] overflow-hidden"
+          >
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-semibold">Milestone Checks - {selectedMilestone.title}</h2>
+              <button onClick={handleCloseChecksModal}>
+                <AlertCircle className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {checksLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#AD7D56]"></div>
+                  <p className="ml-4 text-gray-600">Loading checks...</p>
+                </div>
+              ) : checksError ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                  <p className="text-red-600">Failed to load milestone checks</p>
+                </div>
+              ) : milestoneChecks?.length === 0 ? (
+                <div className="text-center py-8">
+                  <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No checks found for this milestone</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {milestoneChecks?.map((check: any) => (
+                    <div key={check.check_id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <h3 className="font-medium text-gray-900">{check.type.replace(/_/g, ' ')}</h3>
+                          <p className="text-sm text-gray-600 mt-1">{check.description}</p>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${
+                          check.result === 'passed' ? 'bg-green-100 text-green-800' :
+                          check.result === 'failed' ? 'bg-red-100 text-red-800' :
+                          check.result === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {check.result}
+                        </span>
+                      </div>
+                      
+                      {check.params && (
+                        <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Parameters:</h4>
+                          <div className="text-sm text-gray-600">
+                            {Object.entries(check.params).map(([key, value]) => (
+                              <div key={key} className="flex justify-between py-1">
+                                <span className="font-medium">{key}:</span>
+                                <span>{Array.isArray(value) ? value.join(', ') : value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {check.evidence && (
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <h4 className="text-sm font-medium text-blue-700 mb-2">Evidence:</h4>
+                          <p className="text-sm text-blue-600">{check.evidence}</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between text-xs text-gray-500 mt-3">
+                        <span>Verified by: {check.verified_by}</span>
+                        <span>
+                          {check.verified_at ? `Verified: ${new Date(check.verified_at).toLocaleDateString()}` : 
+                           `Created: ${new Date(check.created_at).toLocaleDateString()}`}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-6 border-t bg-gray-50">
+              <button
+                type="button"
+                onClick={handleCloseChecksModal}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+              >
+                Close
+              </button>
             </div>
           </motion.div>
         </div>

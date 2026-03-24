@@ -111,13 +111,13 @@ export default function ClientsPage() {
 
         {/* Action Buttons */}
         <div className="flex gap-3">
-          <button
+          {/* <button
             onClick={runApiDiagnostics}
             className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Eye className="w-4 h-4" />
             <span>Debug API</span>
-          </button>
+          </button> */}
           <button
             onClick={() => setShowCreateModal(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors"

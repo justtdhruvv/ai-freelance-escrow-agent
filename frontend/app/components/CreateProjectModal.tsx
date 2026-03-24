@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Calendar, DollarSign, FileText, Users } from 'lucide-react'
+import { X, Calendar, DollarSign, FileText, Users, Github } from 'lucide-react'
 import { useGetClientsQuery } from '../store/api/clientsApi'
 import { useCreateProjectMutation } from '../store/api/projectsApi'
 
@@ -19,7 +19,8 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
     timeline_days: '',
     client_id: '',
     description: '',
-    deadline: ''
+    deadline: '',
+    repo_link: ''
   })
 
   const [loading, setLoading] = useState(false)
@@ -34,9 +35,7 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'total_price' || name === 'timeline_days'
-        ? Number(value)
-        : value
+      [name]: value
     }))
   }
 
@@ -49,11 +48,11 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
       setError('Select a client')
       return false
     }
-    if (formData.total_price <= 0) {
+    if (Number(formData.total_price) <= 0) {
       setError('Enter valid budget')
       return false
     }
-    if (formData.timeline_days <= 0) {
+    if (Number(formData.timeline_days) <= 0) {
       setError('Enter valid timeline')
       return false
     }
@@ -72,8 +71,9 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
       const payload = {
         name: formData.name,
         client_id: formData.client_id,
-        total_price: formData.total_price,
-        timeline_days: formData.timeline_days,
+        total_price: Number(formData.total_price),
+        timeline_days: Number(formData.timeline_days),
+        repo_link: formData.repo_link
       }
 
       await createProject(payload).unwrap()
@@ -197,6 +197,24 @@ export default function CreateProjectModal({ onClose, onSuccess }: CreateProject
                 placeholder="e.g. 14"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
               />
+            </div>
+
+            {/* Repository Link */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Repository Link
+              </label>
+              <div className="relative">
+                <Github className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="url"
+                  name="repo_link"
+                  value={formData.repo_link}
+                  onChange={handleInputChange}
+                  placeholder="https://github.com/username/repo"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent outline-none"
+                />
+              </div>
             </div>
 
             {/* Buttons */}

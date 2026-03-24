@@ -28,7 +28,7 @@ export default function ProjectsPage() {
   const [selectedProject, setSelectedProject] = useState<any>(null)
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-5 p-6">
       {/* Header Section */}
       <motion.div 
         className="mb-8"
@@ -68,7 +68,7 @@ export default function ProjectsPage() {
 
       {/* Search and Filter Section */}
       <motion.div 
-        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6"
+        className="bg-gray-5 rounded-xl shadow-sm border border-gray-100 p-6 mb-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}

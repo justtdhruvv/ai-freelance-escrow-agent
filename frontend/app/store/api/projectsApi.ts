@@ -2,7 +2,7 @@ import { createApi } from '@reduxjs/toolkit/query/react'
 import { baseApiConfig } from './baseApi'
 
 export interface Project {
-  id: string
+  project_id: string
   total_price: number
   timeline_days: number
   client_id?: string
@@ -10,6 +10,7 @@ export interface Project {
   created_at?: string
   updated_at?: string
   brief?: ProjectBrief
+  repo_link?: string
 }
 
 export interface ProjectBrief {
@@ -94,13 +95,31 @@ export interface Milestone {
   revisions_used: number
   max_revisions: number
   created_at: string
-  sop_id: string
+  sop_id?: string
+}
+
+export interface MilestoneSubmission {
+  submission_id: string
+  project_id: string
+  milestone_id: string
+  type: 'code' | 'design' | 'documentation' | 'other'
+  status: 'submitted' | 'reviewing' | 'approved' | 'rejected'
+  repo_url?: string
+  content?: string
+  submitted_at?: string
+  created_at: string
+}
+
+export interface CreateSubmissionRequest {
+  type: 'code' | 'design' | 'documentation' | 'other'
+  repo_url?: string
+  content?: string
 }
 
 export const projectsApi = createApi({
   ...baseApiConfig,
   reducerPath: 'projectsApi',
-  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP'],
+  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission'],
   endpoints: (builder) => ({
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',
@@ -184,6 +203,22 @@ export const projectsApi = createApi({
       query: (sopId) => `/sops/${sopId}/milestones`,
       providesTags: ['SOP'],
     }),
+    getProjectMilestones: builder.query<Milestone[], string>({
+      query: (projectId) => `/projects/${projectId}/milestones`,
+      providesTags: ['Milestone'],
+    }),
+    submitMilestone: builder.mutation<MilestoneSubmission, { projectId: string; milestoneId: string; data: CreateSubmissionRequest }>({
+      query: ({ projectId, milestoneId, data }) => ({
+        url: `/projects/${projectId}/milestones/${milestoneId}/submissions`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['MilestoneSubmission'],
+      transformErrorResponse: (error) => {
+        console.error('Submit Milestone Error:', error)
+        return error
+      },
+    }),
   }),
 })
 
@@ -201,4 +236,6 @@ export const {
   useGetSOPQuery,
   useGetProjectSOPsQuery,
   useGetSOPMilestonesQuery,
+  useGetProjectMilestonesQuery,
+  useSubmitMilestoneMutation,
 } = projectsApi

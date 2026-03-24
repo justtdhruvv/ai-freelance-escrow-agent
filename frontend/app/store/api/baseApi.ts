@@ -11,7 +11,7 @@ import type { RootState } from '../index'
  * Enhanced base query with secure token handling
  */
 export const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:3000',
+  baseUrl: 'http://localhost:3000/',
   prepareHeaders: (headers, { getState, type, endpoint }) => {
     // Get auth headers using TokenManager
     const authHeaders = TokenManager.getAuthHeader()
@@ -33,8 +33,8 @@ export const baseQuery = fetchBaseQuery({
     console.log(`=== API Call Debug ===`)
     console.log(`Endpoint: ${endpoint}`)
     console.log(`Type: ${type}`)
-    console.log(`Base URL: http://localhost:3000`)
-    console.log(`Full URL: http://localhost:3000${endpoint === 'getClients' ? '/clients' : endpoint}`)
+    console.log(`Base URL: http://localhost:3000/`)
+    console.log(`Full URL: http://localhost:3000/${endpoint}`)
     console.log(`Has Auth Header: ${headers.has('authorization')}`)
     console.log(`Auth Header: ${headers.get('authorization')?.substring(0, 30) || 'None'}...`)
     console.log(`Accept Header: ${headers.get('accept')}`)
@@ -122,7 +122,7 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
 export const baseApiConfig = {
   reducerPath: 'api',
   baseQuery: baseQueryWithAuth,
-  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review'],
+  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review', 'SOP', 'Milestone'],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: 30, // Refetch if data is older than 30 seconds
   refetchOnFocus: true,

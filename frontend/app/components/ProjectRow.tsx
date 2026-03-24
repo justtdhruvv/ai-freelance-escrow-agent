@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { Github, ExternalLink } from 'lucide-react'
 import ProjectActions from './ProjectActions'
 
 interface Project {
@@ -11,6 +12,7 @@ interface Project {
   total_price: number
   timeline_days: number
   created_at: string
+  repo_link?: string
 }
 
 interface ProjectRowProps {
@@ -100,6 +102,25 @@ export default function ProjectRow({
       {/* Timeline */}
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
         {project.timeline_days} days
+      </td>
+
+      {/* Repository Link */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        {project.repo_link ? (
+          <a 
+            href={project.repo_link} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            title={project.repo_link}
+          >
+            <Github className="w-4 h-4" />
+            <span className="truncate max-w-32">Repo</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        ) : (
+          <span className="text-sm text-gray-400">No repo</span>
+        )}
       </td>
 
       {/* Status */}

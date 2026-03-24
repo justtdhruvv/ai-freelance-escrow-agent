@@ -168,10 +168,11 @@ export default function ProjectTable({
 
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[25%]">Project</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[20%]">Client</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[15%]">Budget</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[10%]">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[20%]">Project</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[15%]">Client</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[12%]">Budget</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[8%]">Timeline</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[15%]">Repository</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-600 w-[10%]">Status</th>
               <th className="px-6 py-3 text-center text-xs font-medium text-gray-600 w-[20%]">Actions</th>
             </tr>

@@ -255,6 +255,14 @@ export const projectsApi = createApi({
         return error
       },
     }),
+    getMilestoneChecks: builder.query<any[], string>({
+      query: (milestoneId) => `/sops/milestones/${milestoneId}/checks`,
+      providesTags: ['MilestoneChecks'],
+      transformErrorResponse: (error) => {
+        console.error('Get Milestone Checks Error:', error)
+        return error
+      },
+    }),
   }),
 })
 
@@ -275,4 +283,5 @@ export const {
   useGetProjectMilestonesQuery,
   useSubmitMilestoneMutation,
   useRunAQAsMutation,
+  useGetMilestoneChecksQuery,
 } = projectsApi

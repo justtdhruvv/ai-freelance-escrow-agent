@@ -3,54 +3,111 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, FileText, Clock, Check, AlertCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { 
+import {
   useGenerateSOPMutation,
   useGetSOPQuery,
   useGetSOPMilestonesQuery,
-  useAddProjectBriefMutation
+  useAddProjectBriefMutation,
+  useGetProjectQuery
 } from '../store/api/projectsApi'
+import { TokenManager } from '../utils/authToken'
 
 interface SOPModalProps {
   onClose: () => void
   projectId: string
 }
 
-export default function SOPModal({ 
-  onClose, 
-  projectId 
+export default function SOPModal({
+  onClose,
+  projectId
 }: SOPModalProps) {
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedSOPId, setGeneratedSOPId] = useState<string | null>(null)
+  const [briefs, setBriefs] = useState<any[]>([])
+
+  console.log("🔥 SOP useEffect triggered", projectId)
+
+  useEffect(() => {
+    const fetchBriefs = async () => {
+      try {
+        const authHeaders = TokenManager.getAuthHeader()
+
+        const res = await fetch(`http://localhost:3000/projects/${projectId}/brief`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders
+          }
+        })
+
+        const data = await res.json()
+        console.log("SOP Brief API:", data)
+
+        let briefsData = []
+
+        // ✅ HANDLE ALL CASES PROPERLY
+        if (Array.isArray(data)) {
+          briefsData = data
+        } else if (data?.briefs) {
+          briefsData = data.briefs
+        } else if (data?.brief) {
+          briefsData = Array.isArray(data.brief) ? data.brief : [data.brief]
+        } else if (data?.brief_id) {
+          // 🔥 THIS IS YOUR CASE
+          briefsData = [data]
+        }
+
+        setBriefs(briefsData)
+        console.log("Processed Briefs:", briefsData)
+
+      } catch (err) {
+        console.error("Error fetching briefs:", err)
+      }
+    }
+
+    if (projectId) fetchBriefs()
+  }, [projectId])
+  // Get project details to access brief data
+  const {
+    data: project,
+    isLoading: projectLoading
+  } = useGetProjectQuery(projectId, {
+    skip: !projectId
+  })
 
   const [generateSOP] = useGenerateSOPMutation()
 
   // Get SOP details if we have a generated SOP ID
-  const { 
-    data: sop, 
-    isLoading: sopLoading, 
-    error: sopError 
+  const {
+    data: sop,
+    isLoading: sopLoading,
+    error: sopError
   } = useGetSOPQuery(generatedSOPId || '', {
     skip: !generatedSOPId
   })
 
   // Get milestones if we have a SOP
-  const { 
-    data: milestones, 
-    isLoading: milestonesLoading 
+  const {
+    data: milestones,
+    isLoading: milestonesLoading
   } = useGetSOPMilestonesQuery(generatedSOPId || '', {
     skip: !generatedSOPId
   })
 
   const handleGenerateSOP = async () => {
-    // For now, use hardcoded brief data since we don't have the briefs API working
+    // Use actual project brief data from the project
+    if (!briefs.length) {
+      setErrorMessage('No project brief found. Please add a project brief first.')
+      return
+    }
+
     const briefData = {
-      raw_text: "Build a SaaS dashboard with authentication and analytics",
-      domain: "design",
+      raw_text: briefs[0].raw_text, // 👈 take first brief
+      domain: briefs[0].domain,
       timeline_days: 14
     }
-    
+
     try {
       setIsGenerating(true)
       setSuccessMessage('')
@@ -65,7 +122,7 @@ export default function SOPModal({
 
       setGeneratedSOPId(result.sop_id)
       setSuccessMessage('SOP generated successfully!')
-      
+
       // Auto-refresh after successful generation
       setTimeout(() => {
         setSuccessMessage('')
@@ -79,7 +136,7 @@ export default function SOPModal({
       setIsGenerating(false)
     }
   }
-
+  console.log("Briefs State:", briefs) // ✅ ADD HERE
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -115,8 +172,8 @@ export default function SOPModal({
                 )}
               </div>
             </div>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-gray-500" />
@@ -141,16 +198,50 @@ export default function SOPModal({
             {!generatedSOPId && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Standard Operating Procedure</h3>
-                
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="text-sm text-gray-600 mb-2">
-                    <strong>Project Brief:</strong> Build a SaaS dashboard with authentication and analytics
+
+                <div className="bg-gray-50 rounded-xl p-5 space-y-5 border border-gray-200">
+
+                  {/* Header */}
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Project Brief</p>
+
+                    {!briefs || briefs.length === 0 ? (
+                      <p className="text-sm text-gray-500">No brief added yet</p>
+                    ) : (
+                      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <p className="text-xs font-medium text-blue-600 mb-1 tracking-wide">
+                          {briefs[0]?.domain?.toUpperCase()}
+                        </p>
+
+                        <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                          {briefs[0]?.raw_text}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  <div className="text-sm text-gray-600 mb-2">
-                    <strong>Domain:</strong> Design
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <strong>Timeline:</strong> 14 days
+
+                  {/* Divider */}
+                  <div className="border-t border-gray-200"></div>
+
+                  {/* Meta Info */}
+                  <div className="grid grid-cols-2 gap-4">
+
+                    {/* Domain */}
+                    <div className="bg-white rounded-lg border p-3">
+                      <p className="text-xs text-gray-500">Domain</p>
+                      <p className="text-sm font-semibold text-gray-800 capitalize">
+                        {briefs[0]?.domain || 'Not specified'}
+                      </p>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="bg-white rounded-lg border p-3">
+                      <p className="text-xs text-gray-500">Timeline</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {project?.timeline_days ?? 14} days
+                      </p>
+                    </div>
+
                   </div>
                 </div>
 
@@ -196,11 +287,10 @@ export default function SOPModal({
                   <div>
                     <p className="text-gray-500">Status</p>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        sop.client_approved === 1 && sop.freelancer_approved === 1 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${sop.client_approved === 1 && sop.freelancer_approved === 1
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {sop.client_approved === 1 && sop.freelancer_approved === 1 ? 'Both Approved' : 'Pending Approval'}
                       </span>
                     </div>
@@ -211,7 +301,7 @@ export default function SOPModal({
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">SOP Content</h3>
                   <div className="bg-gray-50 rounded-lg p-6">
-                    <div 
+                    <div
                       className="prose prose-sm max-w-none text-gray-700"
                       dangerouslySetInnerHTML={{ __html: sop.content_html }}
                     />
@@ -227,17 +317,16 @@ export default function SOPModal({
                         <div key={milestone.milestone_id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex justify-between items-start mb-2">
                             <h4 className="font-medium text-gray-900">{milestone.title}</h4>
-                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              milestone.status === 'completed' 
-                                ? 'bg-green-100 text-green-800' 
-                                : milestone.status === 'in_progress'
+                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${milestone.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : milestone.status === 'in_progress'
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
-                            }`}>
+                              }`}>
                               {milestone.status.replace('_', ' ').toUpperCase()}
                             </span>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                             <div>
                               <p className="text-gray-500">Deadline</p>

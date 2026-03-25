@@ -28,7 +28,7 @@ const menuItems = [
   { icon: FolderOpen, label: 'Projects', href: '/dashboard/projects' },
   { icon: Users, label: 'Clients', href: '/dashboard/clients' },
   { icon: Target, label: 'Milestones', href: '/dashboard/milestones' },
-  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/escrow' },
+  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/wallet' },
   { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
   { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },

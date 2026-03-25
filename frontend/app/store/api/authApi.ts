@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { baseQueryWithAuth } from './baseApi'
 
 export interface LoginRequest {
   email: string
@@ -9,54 +10,50 @@ export interface SignupRequest {
   name: string
   email: string
   password: string
+  role?: string
 }
 
 export interface AuthResponse {
+  success: boolean
+  token: string
   user: {
-    id: string
+    user_id: string
     name: string
     email: string
-    avatar?: string
+    role: string
+    pfi_score: number
+    trust_score: number
+    created_at: string
   }
-  token: string
 }
 
 export const authApi = createApi({
   reducerPath: 'authApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`)
-      }
-      return headers
-    },
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes: ['User'],
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (credentials) => ({
-        url: '/auth/login',
+        url: 'auth/login',
         method: 'POST',
         body: credentials,
       }),
     }),
     signup: builder.mutation<AuthResponse, SignupRequest>({
       query: (userData) => ({
-        url: '/auth/signup',
+        url: 'auth/signup',
         method: 'POST',
         body: userData,
       }),
     }),
     logout: builder.mutation<void, void>({
       query: () => ({
-        url: '/auth/logout',
+        url: 'auth/logout',
         method: 'POST',
       }),
     }),
     getCurrentUser: builder.query<AuthResponse['user'], void>({
-      query: () => '/auth/me',
+      query: () => 'users/profile',
       providesTags: ['User'],
     }),
   }),

@@ -13,6 +13,11 @@ interface Project {
   timeline_days: number
   created_at: string
   repo_link?: string
+  name?: string
+  brief?: {
+    raw_text: string
+    domain: string
+  }
 }
 
 interface ProjectRowProps {
@@ -78,7 +83,7 @@ export default function ProjectRow({
         <div>
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-[#111111]">
-              {project.name.substring(0, 8)}
+              {project.name ? project.name.substring(0, 8) : `Project ${project.project_id.substring(0, 8)}`}
             </p>
           </div>
           <p className="text-xs text-gray-500 mt-1">

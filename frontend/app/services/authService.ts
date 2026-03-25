@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000/auth"
+const API_BASE_URL = "http://localhost:3000"
 
 export interface LoginData {
   email: string
@@ -6,16 +6,31 @@ export interface LoginData {
 }
 
 export interface SignupData {
+  name: string
   email: string
   password: string
   role?: string
 }
 
+export interface AuthResponse {
+  success: boolean
+  token: string
+  user: {
+    user_id: string
+    name: string
+    email: string
+    role: string
+    pfi_score: number
+    trust_score: number
+    created_at: string
+  }
+}
+
 class AuthService {
 
-  async login(data: LoginData) {
+  async login(data: LoginData): Promise<AuthResponse> {
 
-    const res = await fetch(`${API_BASE_URL}/login`, {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -26,22 +41,22 @@ class AuthService {
     const result = await res.json()
 
     if (!res.ok) {
-      throw new Error(result.message || "Login failed")
+      throw new Error(result.error || "Login failed")
     }
 
     if (result.token) {
       localStorage.setItem("authToken", result.token)
-      if (result.user?.id) {
-        localStorage.setItem("userId", result.user.id)
+      if (result.user?.user_id) {
+        localStorage.setItem("userId", result.user.user_id)
       }
     }
 
     return result
   }
 
-  async signup(data: SignupData) {
+  async signup(data: SignupData): Promise<AuthResponse> {
 
-    const res = await fetch(`${API_BASE_URL}/signup`, {
+    const res = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -52,13 +67,13 @@ class AuthService {
     const result = await res.json()
 
     if (!res.ok) {
-      throw new Error(result.message || "Signup failed")
+      throw new Error(result.error || "Signup failed")
     }
 
     if (result.token) {
       localStorage.setItem("authToken", result.token)
-      if (result.user?.id) {
-        localStorage.setItem("userId", result.user.id)
+      if (result.user?.user_id) {
+        localStorage.setItem("userId", result.user.user_id)
       }
     }
 
@@ -75,8 +90,20 @@ class AuthService {
   }
 
   async validateToken() {
-    // Simple check - if token exists, consider it valid
-    return this.isAuthenticated()
+    const token = localStorage.getItem("authToken")
+    if (!token) return false
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/profile`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      })
+      return res.ok
+    } catch {
+      return false
+    }
   }
 }
 

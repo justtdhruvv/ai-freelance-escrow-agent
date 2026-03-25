@@ -18,6 +18,9 @@ router.post('/confirm', paymentController.confirmPayment);
 // POST /milestones/:milestoneId/release - Release milestone payment to freelancer
 router.post('/milestones/:milestoneId/release', paymentController.releaseMilestonePayment);
 
+// POST /milestones/:milestoneId/release-prorated - Release prorated milestone payment to freelancer
+router.post('/milestones/:milestoneId/release-prorated', paymentController.releaseProratedPayment);
+
 // GET /projects/:projectId/payment-events - Get payment events for a project
 router.get('/projects/:projectId/payment-events', paymentController.getProjectPaymentEvents);
 

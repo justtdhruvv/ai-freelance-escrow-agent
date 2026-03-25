@@ -106,7 +106,7 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
   
   // Handle other HTTP errors
   if (result.error && typeof result.error.status === 'number' && result.error.status >= 400) {
-    console.error('API Error:', {
+    console.warn('API Error:', {
       status: result.error.status,
       data: result.error.data,
       endpoint: typeof args === 'string' ? args : args.url
@@ -122,7 +122,7 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
 export const baseApiConfig = {
   reducerPath: 'api',
   baseQuery: baseQueryWithAuth,
-  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review', 'SOP', 'Milestone'],
+  tagTypes: ['User', 'Project', 'Client', 'Contract', 'Brief', 'Escrow', 'Review', 'SOP', 'Milestone', 'Wallet', 'Transaction', 'Payment'],
   keepUnusedDataFor: 60, // Keep data for 60 seconds
   refetchOnMountOrArgChange: 30, // Refetch if data is older than 30 seconds
   refetchOnFocus: true,

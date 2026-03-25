@@ -3,21 +3,22 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Wallet, CreditCard, Banknote, Shield } from 'lucide-react'
+import { useGetRazorpayKeyQuery, useCreateEscrowMutation, useConfirmPaymentMutation } from '../store/api/paymentApi'
 
 interface Project {
-  id: string
-  name: string
-  client: string
-  freelancer: string
-  totalEscrowAmount: number
-  milestones: number
-  status: 'active' | 'completed' | 'review' | 'disputed'
-  progress: number
-  description?: string
-  deadline?: string
-  startDate?: string
-  budget?: number
-  riskScore?: number
+  project_id: string
+  name?: string
+  employer_id: string
+  freelancer_id: string
+  total_price: number
+  timeline_days: number
+  status: 'draft' | 'active' | 'completed' | 'review' | 'disputed'
+  created_at?: string
+  repo_link?: string
+  brief?: {
+    raw_text: string
+    domain: string
+  }
 }
 
 interface FundEscrowModalProps {
@@ -26,49 +27,94 @@ interface FundEscrowModalProps {
 }
 
 export default function FundEscrowModal({ project, onClose }: FundEscrowModalProps) {
-  const [amount, setAmount] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [isProcessing, setIsProcessing] = useState(false)
+  
+  // Get Razorpay key for payment
+  const { data: razorpayData } = useGetRazorpayKeyQuery()
+  const [createEscrow, { isLoading: isCreatingEscrow }] = useCreateEscrowMutation()
+  const [confirmPayment, { isLoading: isConfirmingPayment }] = useConfirmPaymentMutation()
 
-  const paymentMethods = [
-    {
-      id: 'card',
-      name: 'Credit/Debit Card',
-      icon: CreditCard,
-      description: 'Pay with Visa, Mastercard, or other cards'
-    },
-    {
-      id: 'bank',
-      name: 'Bank Transfer',
-      icon: Banknote,
-      description: 'Direct bank transfer from your account'
-    },
-    {
-      id: 'wallet',
-      name: 'Wallet Balance',
-      icon: Wallet,
-      description: 'Use your existing wallet balance'
-    }
-  ]
+  // Use project's fixed total_price
+  const escrowAmount = project.total_price || 0
+  const remainingAmount = escrowAmount // Full amount needed
 
   const handleFundEscrow = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsProcessing(true)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    console.log('Funding escrow:', {
-      projectId: project.id,
-      amount: parseFloat(amount),
-      paymentMethod
-    })
-    
-    setIsProcessing(false)
-    onClose()
-  }
+    if (escrowAmount <= 0) {
+      return
+    }
 
-  const remainingAmount = project.totalEscrowAmount - (project.totalEscrowAmount * 0.3) // Assuming 30% already funded
+    setIsProcessing(true)
+
+    try {
+      // Check if Razorpay key is available
+      if (!razorpayData?.key_id) {
+        throw new Error('Payment gateway not configured. Please contact support.')
+      }
+
+      // Create escrow order first
+      const escrowResult = await createEscrow({
+        projectId: project.project_id,
+        amount: escrowAmount * 100, // Convert to cents
+        description: `Escrow funding for ${project.name || 'Project'}`
+      }).unwrap()
+
+      console.log('Escrow order created:', escrowResult)
+
+      // Initialize Razorpay payment
+      if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        const options = {
+          key: razorpayData.key_id, // Use key_id from backend response
+          amount: escrowAmount * 100, // Amount in paise/cents
+          currency: 'INR',
+          name: project.name || 'Project Funding',
+          description: `Escrow funding for project ${project.project_id}`,
+          image: 'https://example.com/your-logo.png',
+          handler: async function (response: any) {
+            try {
+              console.log('Razorpay payment successful:', response)
+              
+              // Confirm payment with backend
+              await confirmPayment({
+                order_id: escrowResult.order_id,
+                payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              }).unwrap()
+
+              console.log('Payment confirmed with backend')
+              onClose()
+            } catch (error) {
+              console.error('Payment confirmation failed:', error)
+              alert('Payment confirmation failed. Please contact support.')
+            } finally {
+              setIsProcessing(false)
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              console.log('Razorpay modal dismissed')
+              setIsProcessing(false)
+            }
+          },
+          theme: {
+            color: '#AD7D56'
+          }
+        }
+
+        const rzp = new (window as any).Razorpay(options)
+        rzp.open()
+      } else {
+        throw new Error('Payment gateway not available. Please refresh the page.')
+      }
+
+    } catch (error: any) {
+      console.error('Failed to create escrow:', error)
+      alert(`Payment failed: ${error.data?.error || error.message || 'Unknown error'}`)
+      setIsProcessing(false)
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -115,77 +161,40 @@ export default function FundEscrowModal({ project, onClose }: FundEscrowModalPro
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Escrow Amount:</span>
-                  <span className="font-medium text-[#111111]">${project.totalEscrowAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Already Funded:</span>
-                  <span className="font-medium text-green-600">${(project.totalEscrowAmount * 0.3).toLocaleString()}</span>
+                  <span className="text-gray-600">Project Total:</span>
+                  <span className="font-medium text-[#111111]">₹{escrowAmount.toLocaleString('en-IN')}</span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-gray-200">
-                  <span>Remaining to Fund:</span>
-                  <span className="text-[#AD7D56]">${remainingAmount.toLocaleString()}</span>
+                  <span>Amount to Fund:</span>
+                  <span className="text-[#AD7D56]">₹{escrowAmount.toLocaleString('en-IN')}</span>
                 </div>
               </div>
             </div>
 
-            {/* Amount Input */}
+            {/* Payment Method Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Funding Amount ($)
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-                min="1"
-                max={remainingAmount}
-                step="0.01"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56] focus:border-transparent"
-                placeholder={`Enter amount (max: $${remainingAmount.toLocaleString()})`}
-              />
-              {amount && parseFloat(amount) > remainingAmount && (
-                <p className="text-red-600 text-sm mt-1">Amount exceeds remaining balance</p>
-              )}
-            </div>
-
-            {/* Payment Method */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
                 Payment Method
               </label>
-              <div className="space-y-3">
-                {paymentMethods.map((method) => (
-                  <motion.div
-                    key={method.id}
-                    className={`relative border rounded-lg p-4 cursor-pointer transition-colors ${
-                      paymentMethod === method.id
-                        ? 'border-[#AD7D56] bg-[#AD7D56]/5'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => setPaymentMethod(method.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <method.icon className="w-5 h-5 text-gray-600" />
-                      <div className="flex-1">
-                        <p className="font-medium text-[#111111]">{method.name}</p>
-                        <p className="text-sm text-gray-600">{method.description}</p>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full border-2 ${
-                        paymentMethod === method.id
-                          ? 'border-[#AD7D56] bg-[#AD7D56]'
-                          : 'border-gray-300'
-                      }`}>
-                        {paymentMethod === method.id && (
-                          <div className="w-full h-full rounded-full bg-white scale-50" />
-                        )}
-                      </div>
+              <div className="grid grid-cols-1 gap-3">
+                <label className="relative">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="card"
+                    checked={paymentMethod === 'card'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="sr-only"
+                    disabled={isCreatingEscrow}
+                  />
+                  <div className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <CreditCard className="w-5 h-5 text-gray-600 mr-3" />
+                    <div>
+                      <div className="font-medium text-gray-900">Credit/Debit Card</div>
+                      <div className="text-sm text-gray-500">Pay with Visa, Mastercard, or other cards</div>
                     </div>
-                  </motion.div>
-                ))}
+                  </div>
+                </label>
               </div>
             </div>
 
@@ -221,15 +230,15 @@ export default function FundEscrowModal({ project, onClose }: FundEscrowModalPro
                 className="flex-1 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                disabled={isProcessing || !amount || parseFloat(amount) > remainingAmount}
+                disabled={isProcessing || isCreatingEscrow || escrowAmount <= 0}
               >
-                {isProcessing ? (
+                {isProcessing || isCreatingEscrow ? (
                   <div className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Processing...
                   </div>
                 ) : (
-                  `Fund $${amount || '0'}`
+                  `Fund ₹${escrowAmount.toLocaleString('en-IN')}`
                 )}
               </motion.button>
             </div>

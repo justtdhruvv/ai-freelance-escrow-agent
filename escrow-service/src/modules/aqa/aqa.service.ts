@@ -135,11 +135,14 @@ export class AQAService {
           updated_at: new Date()
         });
 
-      // 6. Update milestone status
+      // 6. Update milestone status based on AQA verdict
       await this.submissionService.updateMilestoneStatus(milestone.milestone_id, aqaResult.verdict);
 
       // 7. Process payment trigger (within transaction)
       await this.processPaymentTrigger(trx, aqaResult);
+
+      // 8. Update PFI score based on AQA result
+      await this.updatePfiScore(submission.user_id, aqaResult.verdict);
 
       await trx.commit();
 
@@ -371,11 +374,14 @@ export class AQAService {
         const { PaymentService } = await import('../payments/payment.service');
         const paymentService = new PaymentService();
 
-        // Determine payment type
-        const paymentType = aqaResult.verdict === 'passed' ? 'milestone_release' : 'prorated_release';
-
-        // Call payment service
-        await paymentService.releaseMilestonePayment(aqaResult.milestone_id, 'aqa_auto');
+        // Call appropriate payment method based on verdict
+        if (aqaResult.verdict === 'passed') {
+          // Full payment for passed milestones
+          await paymentService.releaseMilestonePayment(aqaResult.milestone_id, 'aqa_auto');
+        } else if (aqaResult.verdict === 'partial') {
+          // Prorated payment for partial results
+          await paymentService.releaseProratedPayment(aqaResult.milestone_id, aqaResult.pass_rate, 'aqa_auto');
+        }
 
         // Update payment status
         await trx('aqa_results')
@@ -386,7 +392,8 @@ export class AQAService {
           aqa_id: aqaResult.aqa_id,
           milestone_id: aqaResult.milestone_id,
           verdict: aqaResult.verdict,
-          payment_type: paymentType
+          pass_rate: aqaResult.pass_rate,
+          payment_type: aqaResult.verdict === 'passed' ? 'full' : 'prorated'
         });
 
       } catch (paymentError) {
@@ -399,6 +406,32 @@ export class AQAService {
         
         // Don't throw - AQA should succeed even if payment fails
       }
+    }
+  }
+
+  private async updatePfiScore(freelancerId: string, verdict: string): Promise<void> {
+    try {
+      // Import PaymentService to avoid circular dependency
+      const { PaymentService } = await import('../payments/payment.service');
+      const paymentService = new PaymentService();
+
+      // Update PFI score based on verdict
+      if (verdict === 'passed') {
+        await paymentService.updatePfiScore(freelancerId, 'milestone_passed');
+      } else if (verdict === 'failed') {
+        await paymentService.updatePfiScore(freelancerId, 'milestone_failed');
+      } else if (verdict === 'partial') {
+        // Partial completion still gets some points
+        await paymentService.updatePfiScore(freelancerId, 'milestone_passed');
+      }
+
+      logger.info('PFI score updated', {
+        freelancer_id: freelancerId,
+        verdict: verdict
+      });
+    } catch (error) {
+      logger.error('Failed to update PFI score', error);
+      // Don't throw - AQA should succeed even if PFI update fails
     }
   }
 }

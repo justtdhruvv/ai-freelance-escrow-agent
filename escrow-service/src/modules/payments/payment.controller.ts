@@ -139,6 +139,60 @@ export class PaymentController {
   };
 
   /**
+   * Release prorated milestone payment to freelancer
+   * POST /milestones/:milestoneId/release-prorated
+   */
+  releaseProratedPayment = async (req: Request, res: Response): Promise<void> => {
+    logger.request('POST', `/milestones/${req.params.milestoneId}/release-prorated`, req.body);
+    
+    try {
+      const user = (req as any).user;
+      const { milestoneId } = req.params;
+      const { passRate } = req.body;
+      
+      if (!user) {
+        const errorResponse = { error: 'User not authenticated' };
+        res.status(401).json(errorResponse);
+        return;
+      }
+
+      if (!milestoneId || Array.isArray(milestoneId)) {
+        const errorResponse = { error: 'Valid Milestone ID is required' };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      if (passRate === undefined || passRate < 0 || passRate > 1) {
+        const errorResponse = { error: 'Valid pass rate (0-1) is required' };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // Release prorated milestone payment
+      const paymentEvent = await this.paymentService.releaseProratedPayment(
+        milestoneId as string,
+        passRate,
+        'manual' // Can be made configurable in future
+      );
+
+      const successResponse = {
+        success: true,
+        message: 'Prorated milestone payment released successfully',
+        data: paymentEvent
+      };
+      res.status(200).json(successResponse);
+
+    } catch (error) {
+      logger.error('Error releasing prorated milestone payment', error);
+      const errorResponse = { 
+        error: 'Failed to release prorated milestone payment',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      };
+      res.status(500).json(errorResponse);
+    }
+  };
+
+  /**
    * Release milestone payment to freelancer
    * POST /milestones/:milestoneId/release
    */

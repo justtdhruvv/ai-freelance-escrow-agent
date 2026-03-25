@@ -14,9 +14,6 @@ router.post('/create-client', userController.createClientAccount);
 // GET /users/profile - Get current user profile
 router.get('/profile', userController.getUserProfile);
 
-// PUT /users/profile - Update current user profile
-router.put('/profile', userController.updateUserProfile);
-
 // POST /users/test-email - Test email service connection
 router.post('/test-email', userController.testEmailConnection);
 

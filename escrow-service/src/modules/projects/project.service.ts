@@ -4,7 +4,6 @@ import { logger } from '../../utils/logger';
 import { AIService } from '../ai/ai.service';
 
 export interface Project {
-  repo_link: any;
   description: string;
   name: string;
   project_id: string;
@@ -15,7 +14,6 @@ export interface Project {
   timeline_days?: number;
   stripe_payment_intent_id?: string;
   created_at?: Date;
-  employer_email?: string;
 }
 
 export interface CreateProjectInput {
@@ -24,12 +22,16 @@ export interface CreateProjectInput {
   client_id: string;
   total_price: number;
   timeline_days?: number;
-  repo_link?: string;
 }
 
-export interface CreateProjectData extends CreateProjectInput {
+export interface CreateProjectData {
+  client_id: string;
+  total_price: number;
+  timeline_days: number;
   freelancer_id: string;
   employer_id: string;
+  description?: string;
+  name?: string;
 }
 
 export class ProjectService {
@@ -48,7 +50,6 @@ export class ProjectService {
           name: projectData.name,
           project_id,
           employer_id: projectData.employer_id,
-          repo_link: projectData.repo_link,
           freelancer_id: projectData.freelancer_id,
           description: projectData.description,
           total_price: projectData.total_price,
@@ -133,13 +134,8 @@ export class ProjectService {
   async getProjectsByEmployer(employer_id: string): Promise<Project[]> {
     try {
       const projects = await db('projects')
-        .join('users', 'projects.employer_id', 'users.user_id')
-        .select(
-          'projects.*',
-          'users.email as employer_email'
-        )
-        .where('projects.employer_id', employer_id)
-        .orderBy('projects.created_at', 'desc');
+        .where({ employer_id })
+        .orderBy('created_at', 'desc');
       
       return projects;
     } catch (error) {
@@ -183,13 +179,8 @@ export class ProjectService {
   async getProjectsByFreelancer(freelancer_id: string): Promise<Project[]> {
     try {
       const projects = await db('projects')
-        .join('users', 'projects.employer_id', 'users.user_id')
-        .select(
-          'projects.*',
-          'users.email as employer_email'
-        )
-        .where('projects.freelancer_id', freelancer_id)
-        .orderBy('projects.created_at', 'desc');
+        .where({ freelancer_id })
+        .orderBy('created_at', 'desc');
       
       return projects;
     } catch (error) {

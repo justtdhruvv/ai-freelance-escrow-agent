@@ -12,7 +12,7 @@ export interface ClientBrief {
 }
 
 export interface CreateClientBriefInput {
-  client_brief: string;
+  raw_text: string;
   domain: 'code' | 'design' | 'content' | 'general';
 }
 
@@ -29,7 +29,7 @@ export class ClientBriefService {
         .insert({
           brief_id,
           project_id: briefData.project_id,
-          raw_text: briefData.client_brief,
+          raw_text: briefData.raw_text,
           domain: briefData.domain,
           ai_processed: false,
           created_at: new Date()

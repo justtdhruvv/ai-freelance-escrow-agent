@@ -3,17 +3,7 @@
 import { motion } from 'framer-motion'
 import { Github, ExternalLink } from 'lucide-react'
 import ProjectActions from './ProjectActions'
-
-interface Project {
-  project_id: string
-  employer_id: string
-  freelancer_id: string
-  status: 'draft' | 'active' | 'completed' | 'review' | 'disputed'
-  total_price: number
-  timeline_days: number
-  created_at: string
-  repo_link?: string
-}
+import { Project, ProjectStatus } from '../../types/project'
 
 interface ProjectRowProps {
   project: Project
@@ -33,7 +23,7 @@ interface ProjectRowProps {
   onDeleteProject: (project: Project) => void
 }
 
-const statusColors = {
+const statusColors: Record<ProjectStatus, string> = {
   draft: 'bg-gray-100 text-gray-800',
   active: 'bg-blue-100 text-blue-800',
   completed: 'bg-green-100 text-green-800',
@@ -78,7 +68,7 @@ export default function ProjectRow({
         <div>
           <div className="flex items-center gap-2">
             <p className="text-sm font-medium text-[#111111]">
-              {project.name.substring(0, 8)}
+              {(project.name || project.project_id).substring(0, 8)}
             </p>
           </div>
           <p className="text-xs text-gray-500 mt-1">

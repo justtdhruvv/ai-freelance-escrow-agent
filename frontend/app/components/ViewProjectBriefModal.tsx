@@ -4,15 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, FileText, Code, Palette, PenTool, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { TokenManager } from '../utils/authToken'
-
-interface ProjectBrief {
-  brief_id: string
-  project_id: string
-  raw_text: string
-  domain: string
-  ai_processed: number
-  created_at: string
-}
+import { ProjectBrief } from '../../types/project'
 
 interface ViewProjectBriefModalProps {
   onClose: () => void

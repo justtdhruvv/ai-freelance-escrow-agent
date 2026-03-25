@@ -1,25 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { baseApiConfig } from './baseApi'
-
-export interface Project {
-  project_id: string
-  total_price: number
-  timeline_days: number
-  client_id?: string
-  status?: string
-  created_at?: string
-  updated_at?: string
-  brief?: ProjectBrief
-  repo_link?: string
-}
-
-export interface ProjectBrief {
-  id: string
-  raw_text: string
-  domain: string
-  project_id: string
-  created_at: string
-}
+import { Project, ProjectBrief } from '../../../types/project'
 
 export interface CreateProjectRequest {
   total_price: number
@@ -144,7 +125,7 @@ export interface AQAResponse {
 export const projectsApi = createApi({
   ...baseApiConfig,
   reducerPath: 'projectsApi',
-  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission'],
+  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission', 'MilestoneChecks'],
   endpoints: (builder) => ({
     getProjects: builder.query<Project[], void>({
       query: () => '/projects',

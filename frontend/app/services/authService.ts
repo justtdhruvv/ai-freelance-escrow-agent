@@ -39,6 +39,22 @@ class AuthService {
     return result
   }
 
+  async fetchUserData() {
+    const token = localStorage.getItem('token')
+
+    if (!token) return null
+
+    const res = await fetch('/api/user', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (!res.ok) return null
+
+    return res.json()
+  }
+
   async signup(data: SignupData) {
 
     const res = await fetch(`${API_BASE_URL}/signup`, {

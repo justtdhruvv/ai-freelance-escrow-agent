@@ -10,6 +10,7 @@ import SOPModal from './SOPModal'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
+import { Project, ProjectsApiResponse } from '../../types/project'
 
 export default function ProjectTable({
   searchTerm,
@@ -37,7 +38,25 @@ export default function ProjectTable({
   const { data, isLoading, isError } = useGetProjectsQuery()
   const { data: clientsData } = useGetClientsQuery()
 
-  const projects = data?.projects || data || []
+  // Type guard to handle different API response formats
+  const extractProjects = (data: ProjectsApiResponse | undefined): Project[] => {
+    if (!data) return []
+    
+    // Case 1: data is an array of projects
+    if (Array.isArray(data)) {
+      return data
+    }
+    
+    // Case 2: data has a projects property
+    if (data && typeof data === 'object' && 'projects' in data) {
+      return Array.isArray(data.projects) ? data.projects : []
+    }
+    
+    // Default fallback
+    return []
+  }
+
+  const projects = extractProjects(data)
   const clients = clientsData?.clients || []
 
   // Create client ID to email mapping

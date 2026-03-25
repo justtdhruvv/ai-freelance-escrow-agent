@@ -30,8 +30,8 @@ export default function ProjectDetailPage() {
   const projectId = params.id as string
   const [showBriefModal, setShowBriefModal] = useState(false)
   const [briefData, setBriefData] = useState({
-    raw_text: '',
-    domain: ''
+    client_brief: '',
+    domain: 'general' as 'code' | 'design' | 'content' | 'general'
   })
 
   // API hooks
@@ -49,7 +49,7 @@ export default function ProjectDetailPage() {
         data: briefData
       }).unwrap()
       setShowBriefModal(false)
-      setBriefData({ raw_text: '', domain: '' })
+      setBriefData({ client_brief: '', domain: 'general' as const })
     } catch (error) {
       console.error('Failed to add brief:', error)
     }
@@ -130,7 +130,7 @@ export default function ProjectDetailPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Project #{project.id}</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Project #{project.project_id}</h1>
               <p className="text-gray-600 mt-1">Manage project details and contracts</p>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function ProjectDetailPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => project.contract && handleApproveClient(project.contract.id)}
+                  onClick={() => project.contract?.contract_id && handleApproveClient(project.contract.contract_id)}
                   disabled={isApprovingClient}
                   className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
@@ -281,7 +281,7 @@ export default function ProjectDetailPage() {
                 </div>
               ) : (
                 <button
-                  onClick={() => project.contract && handleApproveFreelancer(project.contract.id)}
+                  onClick={() => project.contract?.contract_id && handleApproveFreelancer(project.contract.contract_id)}
                   disabled={isApprovingFreelancer}
                   className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
@@ -304,7 +304,7 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : project.contract.client_approved && project.contract.freelancer_approved ? (
                   <button
-                    onClick={() => handleLockContract(project.contract.id)}
+                    onClick={() => project.contract?.contract_id && handleLockContract(project.contract.contract_id)}
                     disabled={isLockingContract}
                     className="flex items-center space-x-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                   >
@@ -340,19 +340,22 @@ export default function ProjectDetailPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Domain</label>
-                <input
-                  type="text"
+                <select
                   value={briefData.domain}
-                  onChange={(e) => setBriefData({ ...briefData, domain: e.target.value })}
+                  onChange={(e) => setBriefData({ ...briefData, domain: e.target.value as 'code' | 'design' | 'content' | 'general' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56]"
-                  placeholder="e.g., web development, mobile app"
-                />
+                >
+                  <option value="general">General</option>
+                  <option value="code">Code</option>
+                  <option value="design">Design</option>
+                  <option value="content">Content</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Project Description</label>
                 <textarea
-                  value={briefData.raw_text}
-                  onChange={(e) => setBriefData({ ...briefData, raw_text: e.target.value })}
+                  value={briefData.client_brief}
+                  onChange={(e) => setBriefData({ ...briefData, client_brief: e.target.value })}
                   rows={6}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56]"
                   placeholder="Describe the project requirements, scope, and deliverables..."

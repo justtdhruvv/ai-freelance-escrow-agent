@@ -4,29 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Calendar, DollarSign, Target, User, FileText, TrendingUp } from 'lucide-react'
 import { useMemo } from 'react'
 import { useGetClientsQuery } from '../store/api/clientsApi'
-
-interface Project {
-  id: string
-  name: string
-  client: string
-  freelancer: string
-  totalEscrowAmount: number
-  milestones: number
-  status: 'active' | 'completed' | 'review' | 'disputed'
-  progress: number
-  description?: string
-  deadline?: string
-  startDate?: string
-  budget?: number
-  riskScore?: number
-}
+import { Project, ProjectStatus } from '../../types/project'
 
 interface ViewProjectModalProps {
   project: Project
   onClose: () => void
 }
 
-const statusColors = {
+const statusColors: Record<ProjectStatus, string> = {
+  draft: 'bg-gray-100 text-gray-800',
   active: 'bg-blue-100 text-blue-800',
   completed: 'bg-green-100 text-green-800',
   review: 'bg-yellow-100 text-yellow-800',

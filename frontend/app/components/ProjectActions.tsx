@@ -3,16 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MoreHorizontal, Eye, Edit, Target, Wallet, AlertTriangle, MessageSquare, Trash2, FilePlus, FileText, FileCheck, FileCode } from 'lucide-react'
-
-interface Project {
-  project_id: string
-  employer_id: string
-  freelancer_id: string
-  status: 'draft' | 'active' | 'completed' | 'review' | 'disputed'
-  total_price: number
-  timeline_days: number
-  created_at: string
-}
+import { Project } from '../../types/project'
 
 interface ProjectActionsProps {
   project: Project

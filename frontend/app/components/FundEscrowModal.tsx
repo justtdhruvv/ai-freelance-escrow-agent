@@ -65,6 +65,12 @@ export default function FundEscrowModal({ project, onClose }: FundEscrowModalPro
 
       // Initialize Razorpay payment
       if (typeof window !== 'undefined' && (window as any).Razorpay) {
+        console.log('=== Razorpay Configuration Debug ===')
+        console.log('Razorpay available:', !!(window as any).Razorpay)
+        console.log('Escrow order created:', escrowResult)
+        console.log('Razorpay key:', razorpayData?.key_id)
+        console.log('Amount:', escrowAmount * 100)
+        
         const options = {
           key: razorpayData.key_id, // Use key_id from backend response
           amount: escrowAmount * 100, // Amount in paise/cents
@@ -72,22 +78,67 @@ export default function FundEscrowModal({ project, onClose }: FundEscrowModalPro
           name: project.name || 'Project Funding',
           description: `Escrow funding for project ${project.project_id}`,
           image: 'https://example.com/your-logo.png',
+          order_id: escrowResult.order_id, // ✅ Add order_id to options
           handler: async function (response: any) {
+            console.log('=== Razorpay Handler Called ===')
+            console.log('Payment successful - handler triggered!')
+            console.log('Full response object:', JSON.stringify(response, null, 2))
+            console.log('Response keys:', Object.keys(response))
+            console.log('Response properties:', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
             try {
               console.log('Razorpay payment successful:', response)
               
               // Confirm payment with backend
-              await confirmPayment({
-                order_id: escrowResult.order_id,
+              // Check if response has expected fields
+              if (!response.razorpay_order_id || !response.razorpay_payment_id || !response.razorpay_signature) {
+                console.error('Missing required fields in Razorpay response')
+                console.error('Available fields:', Object.keys(response))
+                alert('Payment response is incomplete. Please contact support.')
+                setIsProcessing(false)
+                return
+              }
+
+              const confirmPayload = {
+                order_id: response.razorpay_order_id,  // ✅ Use order_id from Razorpay response
                 payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature
-              }).unwrap()
+              }
+              
+              console.log('=== Payment Confirmation Debug ===')
+              console.log('Full Razorpay Response:', response)
+              console.log('Escrow Result:', escrowResult)
+              console.log('Order ID from escrow:', escrowResult.order_id)
+              console.log('Order ID from Razorpay response:', response.razorpay_order_id)
+              console.log('Payment ID from Razorpay:', response.razorpay_payment_id)
+              console.log('Signature from Razorpay:', response.razorpay_signature)
+              console.log('Final Payload to send:', confirmPayload)
+              console.log('Payload keys:', Object.keys(confirmPayload))
+              console.log('All fields present:', 
+                !!confirmPayload.order_id, 
+                !!confirmPayload.payment_id, 
+                !!confirmPayload.razorpay_signature
+              )
+              console.log('==================================')
+              
+              await confirmPayment(confirmPayload).unwrap()
 
               console.log('Payment confirmed with backend')
               onClose()
-            } catch (error) {
+            } catch (error: any) {
               console.error('Payment confirmation failed:', error)
-              alert('Payment confirmation failed. Please contact support.')
+              console.error('Error details:', {
+                status: error.status,
+                data: error.data,
+                error: error.error
+              })
+              
+              // Show specific error message from backend if available
+              const errorMessage = error.data?.error || error.message || 'Unknown error occurred'
+              alert(`Payment confirmation failed: ${errorMessage}`)
             } finally {
               setIsProcessing(false)
             }

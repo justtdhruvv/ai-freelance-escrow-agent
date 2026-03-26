@@ -12,6 +12,7 @@ import FundEscrowModal from '../../components/FundEscrowModal'
 import DisputeModal from '../../components/DisputeModal'
 import MessageModal from '../../components/MessageModal'
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal'
+import { Project } from '../../../types/project'
 
 export default function ProjectsPage() {
   const router = useRouter()
@@ -106,37 +107,40 @@ export default function ProjectsPage() {
       <ProjectTable
         searchTerm={searchTerm}
         filterStatus={filterStatus}
-        onViewProject={(project) => {
+        onViewProject={(project: Project) => {
           setSelectedProject(project)
           setShowViewModal(true)
         }}
-        onEditProject={(project) => {
+        onEditProject={(project: Project) => {
           setSelectedProject(project)
           // Handle edit
         }}
-        onViewMilestones={(project) => {
+        onViewMilestones={(project: Project) => {
           setSelectedProject(project)
           setShowMilestonesModal(true)
         }}
-        onFundEscrow={(project) => {
+        onFundEscrow={(project: Project) => {
           setSelectedProject(project)
           setShowFundEscrowModal(true)
         }}
-        onReleasePayment={(project) => {
+        onReleasePayment={(project: Project) => {
           setSelectedProject(project)
           // Handle release payment
         }}
-        onOpenDispute={(project) => {
+        onOpenDispute={(project: Project) => {
           setSelectedProject(project)
           setShowDisputeModal(true)
         }}
-        onMessageFreelancer={(project) => {
+        onMessageFreelancer={(project: Project) => {
           setSelectedProject(project)
           setShowMessageModal(true)
         }}
-        onDeleteProject={(project) => {
+        onDeleteProject={(project: Project) => {
           setSelectedProject(project)
           setShowDeleteModal(true)
+        }}
+        onCreateProject={() => {
+          setShowCreateModal(true)
         }}
       />
 

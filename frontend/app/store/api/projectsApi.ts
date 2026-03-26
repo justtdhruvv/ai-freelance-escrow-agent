@@ -291,9 +291,7 @@ export const projectsApi = createApi({
   ...baseApiConfig,
 
   reducerPath: 'projectsApi',
-
-  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission'],
-
+  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission', 'MilestoneChecks'],
   endpoints: (builder) => ({
 
     getProjects: builder.query<Project[], void>({

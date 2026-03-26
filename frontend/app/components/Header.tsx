@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Bell, User, Menu, LogOut, ChevronDown } from 'lucide-react'
-import { authService, UserData } from '../services/authService'
+import { authService } from '../services/authService'
 
 interface HeaderProps {
   isMobile: boolean
@@ -11,61 +11,51 @@ interface HeaderProps {
   sidebarCollapsed: boolean
 }
 
+interface UserData {
+  name: string
+  email: string
+  role: string
+}
+
 export default function Header({ isMobile, toggleSidebar, sidebarCollapsed }: HeaderProps) {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [userData, setUserData] = useState<UserData | null>(null)
 
-  useEffect(() => {
-    // Get user data on component mount
-    const loadUserData = async () => {
-      try {
-        // First try to fetch fresh user data from database
-        const freshUserData = await authService.fetchUserData()
-        
-        if (freshUserData) {
-          setUserData(freshUserData)
-        } else {
-          // Fallback: extract name from email if no user data available
-          const email = localStorage.getItem('userEmail')
-          if (email) {
-            const name = email.split('@')[0]
-            setUserData({
-              name: name.charAt(0).toUpperCase() + name.slice(1),
-              email: email,
-              role: 'User'
-            })
-          } else {
-            // Final fallback: use stored data or defaults
-            const storedUser = authService.getUserData()
-            if (storedUser) {
-              setUserData(storedUser)
-            } else {
-              setUserData({
-                name: 'User',
-                email: 'user@example.com',
-                role: 'User'
-              })
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error)
-        // Set default user data on error
-        setUserData({
-          name: 'User',
-          email: 'user@example.com',
-          role: 'User'
-        })
-      }
+useEffect(() => {
+  try {
+    const email = localStorage.getItem('userEmail')
+    const role = localStorage.getItem('role')
+
+    if (email) {
+      const name = email.split('@')[0]
+
+      setUserData({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        email: email,
+        role: role || 'User'
+      })
+    } else {
+      setUserData({
+        name: 'User',
+        email: 'user@example.com',
+        role: 'User'
+      })
     }
+  } catch (error) {
+    console.error('Error loading user data:', error)
 
-    loadUserData()
-  }, [])
-
-  const handleLogout = () => {
-    authService.logout()
-    window.location.href = '/login'
+    setUserData({
+      name: 'User',
+      email: 'user@example.com',
+      role: 'User'
+    })
   }
+}, [])
+
+const handleLogout = () => {
+  localStorage.clear()
+  window.location.href = '/login'
+}
 
   const displayName = userData?.name || 'User'
   const displayEmail = userData?.email || 'user@example.com'

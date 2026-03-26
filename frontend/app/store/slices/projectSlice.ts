@@ -1,23 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-
-export interface Project {
-  id: string
-  total_price: number
-  timeline_days: number
-  client_id?: string
-  status?: string
-  created_at?: string
-  updated_at?: string
-  brief?: ProjectBrief
-}
-
-export interface ProjectBrief {
-  id: string
-  raw_text: string
-  domain: string
-  project_id: string
-  created_at: string
-}
+import { Project, ProjectBrief } from '../../../types/project'
 
 interface ProjectState {
   projects: Project[]
@@ -53,17 +35,17 @@ const projectSlice = createSlice({
       state.projects.unshift(action.payload)
     },
     updateProject: (state, action: PayloadAction<Project>) => {
-      const index = state.projects.findIndex(p => p.id === action.payload.id)
+      const index = state.projects.findIndex(p => p.project_id === action.payload.project_id)
       if (index !== -1) {
         state.projects[index] = action.payload
       }
-      if (state.currentProject?.id === action.payload.id) {
+      if (state.currentProject?.project_id === action.payload.project_id) {
         state.currentProject = action.payload
       }
     },
     deleteProject: (state, action: PayloadAction<string>) => {
-      state.projects = state.projects.filter(p => p.id !== action.payload)
-      if (state.currentProject?.id === action.payload) {
+      state.projects = state.projects.filter(p => p.project_id !== action.payload)
+      if (state.currentProject?.project_id === action.payload) {
         state.currentProject = null
       }
     },
@@ -82,11 +64,11 @@ const projectSlice = createSlice({
     },
     addProjectBrief: (state, action: PayloadAction<{ projectId: string; brief: ProjectBrief }>) => {
       const { projectId, brief } = action.payload
-      const projectIndex = state.projects.findIndex(p => p.id === projectId)
+      const projectIndex = state.projects.findIndex(p => p.project_id === projectId)
       if (projectIndex !== -1) {
         state.projects[projectIndex].brief = brief
       }
-      if (state.currentProject?.id === projectId) {
+      if (state.currentProject?.project_id === projectId) {
         state.currentProject.brief = brief
       }
     },

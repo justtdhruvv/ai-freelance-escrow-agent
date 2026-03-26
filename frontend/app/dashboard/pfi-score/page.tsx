@@ -310,7 +310,7 @@ export default function PFIScorePage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="bg-gradient-to-r from-[#AD7D56] to-[#8B6344] rounded-xl shadow-sm p-6 text-white"
+        className="bg-gradient-to-r from-[#AD7D56] to-[#8B6344] rounded-xl shadow-sm p-6 text-white mt-6"
       >
         <h3 className="text-xl font-semibold mb-4">Tips to Improve Your PFI Score</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

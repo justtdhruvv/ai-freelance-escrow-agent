@@ -370,17 +370,48 @@ export class AQAService {
     if (['passed', 'partial'].includes(aqaResult.verdict) && aqaResult.payment_status === 'pending') {
       
       try {
-        // Import PaymentService to avoid circular dependency
-        const { PaymentService } = await import('../payments/payment.service');
-        const paymentService = new PaymentService();
+        // Import WalletService to add credits to freelancer wallet
+        const { WalletService } = await import('../wallets/wallet.service');
+        const walletService = new WalletService();
 
-        // Call appropriate payment method based on verdict
+        // Get milestone details directly from database
+        const milestone = await db('milestones')
+          .where({ milestone_id: aqaResult.milestone_id })
+          .first();
+        
+        if (!milestone) {
+          throw new Error('Milestone not found for payment processing');
+        }
+
+        // Get project details to get freelancer_id
+        const project = await db('projects')
+          .where({ project_id: milestone.project_id })
+          .first();
+        
+        if (!project) {
+          throw new Error('Project not found for payment processing');
+        }
+
+        // Call appropriate wallet credit method based on verdict
         if (aqaResult.verdict === 'passed') {
           // Full payment for passed milestones
-          await paymentService.releaseMilestonePayment(aqaResult.milestone_id, 'aqa_auto');
+          await walletService.addCredits(
+            project.freelancer_id,  // Get freelancer_id from project
+            milestone.payment_amount,  // Use milestone payment_amount
+            `Full payment for milestone: ${milestone.title}`,
+            aqaResult.milestone_id,  // Reference to milestone
+            'milestone_payment'
+          );
         } else if (aqaResult.verdict === 'partial') {
           // Prorated payment for partial results
-          await paymentService.releaseProratedPayment(aqaResult.milestone_id, aqaResult.pass_rate, 'aqa_auto');
+          const proratedAmount = Math.floor(milestone.payment_amount * aqaResult.pass_rate);
+          await walletService.addCredits(
+            project.freelancer_id,
+            proratedAmount,
+            `Partial payment (${Math.round(aqaResult.pass_rate * 100)}%) for milestone: ${milestone.title}`,
+            aqaResult.milestone_id,
+            'milestone_payment'
+          );
         }
 
         // Update payment status
@@ -388,17 +419,18 @@ export class AQAService {
           .where({ aqa_id: aqaResult.aqa_id })
           .update({ payment_status: 'processed' });
 
-        logger.info('Payment triggered successfully', {
+        logger.info('Wallet credits added successfully', {
           aqa_id: aqaResult.aqa_id,
           milestone_id: aqaResult.milestone_id,
           verdict: aqaResult.verdict,
           pass_rate: aqaResult.pass_rate,
+          freelancer_id: project.freelancer_id,
           payment_type: aqaResult.verdict === 'passed' ? 'full' : 'prorated'
         });
 
       } catch (paymentError) {
         // Log payment error but don't fail AQA
-        logger.error('Payment trigger failed', {
+        logger.error('Wallet credit addition failed', {
           aqa_id: aqaResult.aqa_id,
           milestone_id: aqaResult.milestone_id,
           error: paymentError

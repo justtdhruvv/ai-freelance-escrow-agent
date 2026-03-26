@@ -20,7 +20,7 @@ router.post('/convert', walletController.convertToRealMoney);
 // GET /wallet/conversions/:conversion_id - Get conversion status
 router.get('/conversions/:conversion_id', walletController.getConversionStatus);
 
-// POST /wallet/add-credits - Add manual credits (admin/demo function)
-router.post('/add-credits', walletController.addCredits);
+// REMOVED: /wallet/add-credits endpoint for security
+// Credits should only be added automatically via AQA milestone completions
 
 export default router;

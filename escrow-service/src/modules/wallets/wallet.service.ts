@@ -69,6 +69,109 @@ export class WalletService {
   }
 
   /**
+   * Add credits to freelancer wallet (for milestone payments)
+   */
+  async addCredits(
+    freelancerId: string, 
+    amount: number, 
+    description: string,
+    milestoneId?: string,
+    type: 'milestone_payment' | 'bonus' | 'refund' = 'milestone_payment'
+  ): Promise<WalletTransaction> {
+    const trx = await db.transaction();
+    
+    try {
+      // Get or create wallet
+      let wallet = await trx('freelancer_wallets')
+        .where({ freelancer_id: freelancerId })
+        .first();
+      
+      if (!wallet) {
+        // Create wallet if it doesn't exist
+        const walletId = uuidv4();
+        await trx('freelancer_wallets').insert({
+          wallet_id: walletId,
+          freelancer_id: freelancerId,
+          balance: 0,
+          available_balance: 0,
+          pending_balance: 0,
+          created_at: new Date()
+        });
+        
+        wallet = await trx('freelancer_wallets')
+          .where({ wallet_id: walletId })
+          .first();
+      }
+      
+      // Update wallet balance
+      const newBalance = wallet.balance + amount;
+      await trx('freelancer_wallets')
+        .where({ freelancer_id: freelancerId })
+        .update({ 
+          balance: newBalance,
+          available_balance: newBalance
+        });
+      
+      // Create transaction record
+      const transactionId = uuidv4();
+      await trx('wallet_transactions').insert({
+        transaction_id: transactionId,
+        wallet_id: wallet.wallet_id,
+        type: 'credit',
+        amount: amount,
+        description: description,
+        reference_id: milestoneId,
+        reference_type: 'payment_event',
+        created_at: new Date()
+      });
+      
+      // Update milestone status to 'paid' if milestoneId provided
+      if (milestoneId) {
+        await trx('milestones')
+          .where({ milestone_id: milestoneId })
+          .update({ 
+            status: 'paid',
+            updated_at: new Date()
+          });
+      }
+      
+      await trx.commit();
+      
+      logger.info('Credits added to wallet successfully', {
+        freelancer_id: freelancerId,
+        amount: amount,
+        milestone_id: milestoneId,
+        transaction_id: transactionId
+      });
+      
+      // Return the created transaction
+      const createdTransaction = await this.getTransactionById(transactionId);
+      return createdTransaction!;
+      
+    } catch (error) {
+      await trx.rollback();
+      logger.error('Error adding credits to wallet', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get transaction by ID
+   */
+  async getTransactionById(transactionId: string): Promise<WalletTransaction | null> {
+    try {
+      const transaction = await db('wallet_transactions')
+        .where({ transaction_id: transactionId })
+        .first();
+      
+      return transaction || null;
+    } catch (error) {
+      logger.error('Error getting transaction by ID', error);
+      throw error;
+    }
+  }
+
+  /**
    * Create wallet for freelancer
    */
   async createWallet(freelancerId: string): Promise<FreelancerWallet> {
@@ -117,96 +220,13 @@ export class WalletService {
   }
 
   /**
-   * Add credits to wallet (for milestone payments)
-   */
-  async addCredits(
-    freelancerId: string, 
-    amount: number, 
-    description: string,
-    referenceId?: string,
-    referenceType?: 'payment_event' | 'manual_adjustment'
-  ): Promise<WalletTransaction> {
-    const trx = await db.transaction();
-    
-    try {
-      // Get or create wallet
-      let wallet = await trx('freelancer_wallets')
-        .where({ freelancer_id: freelancerId })
-        .first();
-      
-      if (!wallet) {
-        // Create wallet if it doesn't exist
-        const walletId = uuidv4();
-        await trx('freelancer_wallets').insert({
-          wallet_id: walletId,
-          freelancer_id: freelancerId,
-          balance: 0,
-          available_balance: 0,
-          pending_balance: 0,
-          created_at: new Date()
-        });
-        
-        wallet = await trx('freelancer_wallets')
-          .where({ wallet_id: walletId })
-          .first();
-      }
-      
-      // Update wallet balance
-      const newBalance = wallet.balance + amount;
-      await trx('freelancer_wallets')
-        .where({ freelancer_id: freelancerId })
-        .update({ 
-          balance: newBalance,
-          available_balance: newBalance
-        });
-      
-      // Create transaction record
-      const transactionId = uuidv4();
-      await trx('wallet_transactions').insert({
-        transaction_id: transactionId,
-        wallet_id: wallet.wallet_id,
-        type: 'credit',
-        amount: amount,
-        description,
-        reference_id: referenceId,
-        reference_type: referenceType,
-        created_at: new Date()
-      });
-      
-      const transaction: WalletTransaction = {
-        transaction_id: transactionId,
-        wallet_id: wallet.wallet_id,
-        type: 'credit',
-        amount,
-        description,
-        reference_id: referenceId,
-        reference_type: referenceType
-      };
-      
-      await trx.commit();
-      
-      logger.info('Credits added to wallet', {
-        freelancer_id: freelancerId,
-        amount,
-        new_balance: newBalance,
-        transaction_id: transactionId
-      });
-      
-      return transaction;
-    } catch (error) {
-      await trx.rollback();
-      logger.error('Error adding credits to wallet', error);
-      throw error;
-    }
-  }
-
-  /**
    * Convert internal credits to real money (for future implementation)
    */
   async convertToRealMoney(
     freelancerId: string, 
     internalAmount: number, 
-    conversionRate: number = 1.0
+    conversionRate: number = 1.0,
+    fees: number = 0.02 // 2% conversion fee
   ): Promise<WalletConversion> {
     const trx = await db.transaction();
     
@@ -304,7 +324,15 @@ export class WalletService {
         .first();
       
       if (!wallet) {
-        throw new Error('Wallet not found');
+        // ✅ Auto-create wallet for first-time freelancers
+        logger.info('Auto-creating wallet for freelancer', { freelancer_id: freelancerId });
+        const newWallet = await this.createWallet(freelancerId);
+        return {
+          wallet: newWallet,
+          total_earned: 0,
+          total_converted: 0,
+          pending_conversions: 0
+        };
       }
       
       // Get total earned from transactions

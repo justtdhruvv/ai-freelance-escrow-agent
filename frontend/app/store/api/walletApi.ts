@@ -33,12 +33,6 @@ export interface WalletTransactionsResponse {
   }
 }
 
-export interface AddCreditsRequest {
-  freelancer_id: string
-  amount: number
-  description: string
-}
-
 export interface ConvertCreditsRequest {
   internal_amount: number
   conversion_rate?: number
@@ -65,6 +59,10 @@ export const walletApi = createApi({
     getWallet: builder.query<WalletData, void>({
       query: () => 'wallet',
       providesTags: ['Wallet'],
+      transformResponse: (response: any) => {
+        // Extract data from backend response format
+        return response.data || response;
+      },
     }),
     getTransactions: builder.query<WalletTransactionsResponse, { limit?: number; offset?: number }>({
       query: ({ limit = 50, offset = 0 }) => ({
@@ -72,14 +70,6 @@ export const walletApi = createApi({
         params: { limit, offset },
       }),
       providesTags: ['Transaction'],
-    }),
-    addCredits: builder.mutation<any, AddCreditsRequest>({
-      query: (data) => ({
-        url: 'wallet/add-credits',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Wallet', 'Transaction'],
     }),
     convertCredits: builder.mutation<ConvertCreditsResponse, ConvertCreditsRequest>({
       query: (data) => ({
@@ -95,6 +85,5 @@ export const walletApi = createApi({
 export const {
   useGetWalletQuery,
   useGetTransactionsQuery,
-  useAddCreditsMutation,
   useConvertCreditsMutation,
 } = walletApi

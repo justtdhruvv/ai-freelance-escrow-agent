@@ -285,7 +285,6 @@ export default function MilestonesPage() {
       }))
 
 
-
       // Update milestone status to submitted
 
       setMilestoneStatuses(prev => ({

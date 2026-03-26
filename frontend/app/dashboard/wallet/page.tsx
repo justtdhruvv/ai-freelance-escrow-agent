@@ -10,8 +10,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useGetWalletQuery, useGetTransactionsQuery, useConvertCreditsMutation } from '../../store/api/walletApi';
+import { useRouteProtection } from '../../hooks/useRouteProtection';
 
 export default function EscrowWalletPage() {
+  // Protect route - redirect if not employer
+  useRouteProtection()
+  
   const { data: walletData, isLoading, error } = useGetWalletQuery();
   const { data: transactionsData } = useGetTransactionsQuery({ limit: 10 });
   const [convertCredits, { isLoading: converting }] = useConvertCreditsMutation();

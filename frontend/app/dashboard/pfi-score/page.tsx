@@ -18,8 +18,11 @@ import {
   Shield
 } from 'lucide-react'
 import { useGetUserProfileQuery } from '../../store/api/projectsApi'
+import { useRouteProtection } from '../../hooks/useRouteProtection'
 
 export default function PFIScorePage() {
+  // Protect route - redirect if not employer
+  useRouteProtection()
   const [pfiData, setPfiData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

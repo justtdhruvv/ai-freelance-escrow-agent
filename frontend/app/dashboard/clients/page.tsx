@@ -10,8 +10,12 @@ import { useCreateClientMutation } from '../../store/api/clientsApi'
 import ClientTable from '../../components/ClientTable'
 import CreateClientModal from '../../components/CreateClientModal'
 import { ApiDebugger } from '../../utils/apiDebugger'
+import { useRouteProtection } from '../../hooks/useRouteProtection'
 
 export default function ClientsPage() {
+  // Protect route - redirect if not employer
+  useRouteProtection()
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
 

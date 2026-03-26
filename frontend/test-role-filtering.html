@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Role Filtering Logic</title>
+</head>
+<body>
+    <h1>Test Role Filtering Logic</h1>
+    <button onclick="testEmployer()">Test Employer Role</button>
+    <button onclick="testFreelancer()">Test Freelancer Role</button>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <div id="result"></div>
+    
+    <script>
+        const menuItems = [
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Projects', href: '/dashboard/projects' },
+            { label: 'Milestones', href: '/dashboard/milestones' },
+            { label: 'AI Reviews', href: '/dashboard/ai-reviews' },
+            { label: 'Clients', href: '/dashboard/clients', roles: ['freelancer'] },
+            { label: 'Escrow Wallet', href: '/dashboard/wallet', roles: ['freelancer'] },
+            { label: 'PFI Score', href: '/dashboard/pfi-score', roles: ['freelancer'] },
+            { label: 'Settings', href: '/dashboard/settings' },
+        ];
+
+        function filterMenuItems(userRole) {
+            return menuItems.filter(item => {
+                if (!item.roles) return true;
+                return item.roles.includes(userRole);
+            });
+        }
+
+        function testEmployer() {
+            localStorage.setItem('role', 'employer');
+            const userRole = localStorage.getItem('role');
+            const filtered = filterMenuItems(userRole);
+            
+            document.getElementById('result').innerHTML = `
+                <h2>Employer Role Test</h2>
+                <p><strong>User Role:</strong> ${userRole}</p>
+                <p><strong>Expected Items:</strong> Dashboard, Projects, Milestones, AI Reviews, Settings (5 items)</p>
+                <p><strong>Actual Items:</strong> ${filtered.map(item => item.label).join(', ')}</p>
+                <p><strong>Count:</strong> ${filtered.length}</p>
+                <p><strong>Test Result:</strong> ${filtered.length === 5 ? '✅ PASS' : '❌ FAIL'}</p>
+            `;
+        }
+
+        function testFreelancer() {
+            localStorage.setItem('role', 'freelancer');
+            const userRole = localStorage.getItem('role');
+            const filtered = filterMenuItems(userRole);
+            
+            document.getElementById('result').innerHTML = `
+                <h2>Freelancer Role Test</h2>
+                <p><strong>User Role:</strong> ${userRole}</p>
+                <p><strong>Expected Items:</strong> All 8 items</p>
+                <p><strong>Actual Items:</strong> ${filtered.map(item => item.label).join(', ')}</p>
+                <p><strong>Count:</strong> ${filtered.length}</p>
+                <p><strong>Test Result:</strong> ${filtered.length === 8 ? '✅ PASS' : '❌ FAIL'}</p>
+            `;
+        }
+
+        function clearStorage() {
+            localStorage.removeItem('role');
+            document.getElementById('result').innerHTML = '<p>Storage cleared</p>';
+        }
+    </script>
+</body>
+</html>

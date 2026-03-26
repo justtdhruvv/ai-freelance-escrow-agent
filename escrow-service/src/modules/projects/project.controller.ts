@@ -1,12 +1,14 @@
 import { Request, Response } from 'express';
 import { ProjectService, CreateProjectInput } from './project.service';
+import { VerificationContractService } from '../verificationContract/verificationContract.service';
 import { logger } from '../../utils/logger';
 
 export class ProjectController {
   private projectService: ProjectService;
-
+  private VerificationContractService: VerificationContractService;
   constructor() {
     this.projectService = new ProjectService();
+    this.VerificationContractService = new VerificationContractService();
   }
 
   createProject = async (req: Request, res: Response): Promise<void> => {
@@ -21,7 +23,7 @@ export class ProjectController {
         return;
       }
 
-      const { client_id, total_price, timeline_days }: CreateProjectInput = req.body;
+      const { name, client_id, total_price, timeline_days, description, repo_link }: CreateProjectInput = req.body;
 
       // Validate client_id
       if (!client_id || typeof client_id !== 'string' || client_id.trim().length === 0) {
@@ -54,22 +56,33 @@ export class ProjectController {
       }
 
       const project = await this.projectService.createProject({
+        name,
         client_id,
         total_price,
         timeline_days,
+        repo_link,
         freelancer_id: user.userId,
-        employer_id: user.userId
+        employer_id: client_id,  // client_id is actually the employer_id
+        description
       });
 
       const successResponse = {
+        name: project.name,
         project_id: project.project_id,
+        repo_link: project.repo_link,
         employer_id: project.employer_id,
         freelancer_id: project.freelancer_id,
+        description: project.description,
         status: project.status,
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         created_at: project.created_at
       };
+
+      await this.VerificationContractService.createVerificationContract({
+        project_id: project.project_id,
+        generated_from_sop_version: 1
+      });
 
       res.status(201).json(successResponse);
     } catch (error) {
@@ -108,12 +121,16 @@ export class ProjectController {
       const projectsResponse = projects.map(project => ({
         project_id: project.project_id,
         employer_id: project.employer_id,
+        employer_email: project.employer_email,
         freelancer_id: project.freelancer_id,
+        name: project.name,
         status: project.status,
+        description: project.description,
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         stripe_payment_intent_id: project.stripe_payment_intent_id,
-        created_at: project.created_at
+        created_at: project.created_at,
+        repo_link: project.repo_link
       }));
 
       res.status(200).json(projectsResponse);
@@ -171,7 +188,10 @@ export class ProjectController {
         total_price: project.total_price,
         timeline_days: project.timeline_days,
         stripe_payment_intent_id: project.stripe_payment_intent_id,
-        created_at: project.created_at
+        created_at: project.created_at,
+        name: project.name,
+        description: project.description,
+        repo_link: project.repo_link
       };
 
       res.status(200).json(projectResponse);

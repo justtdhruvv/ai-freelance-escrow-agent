@@ -26,13 +26,8 @@ export class WalletController {
         return;
       }
 
-      if (user.role !== 'freelancer') {
-        const errorResponse = { error: 'Only freelancers have wallets' };
-        res.status(403).json(errorResponse);
-        return;
-      }
-
-      // Get wallet summary
+      // ✅ Allow both employers and freelancers to have wallets
+      // Employers can view their escrow balance, freelancers view their earned credits
       const walletSummary = await this.walletService.getWalletSummary(user.userId);
       
       const successResponse = {
@@ -45,8 +40,8 @@ export class WalletController {
           pending_balance: walletSummary.wallet.pending_balance,   // Pending conversions
           total_earned: walletSummary.total_earned,           // Total credits earned
           total_converted: walletSummary.total_converted,       // Total converted to real money
-          wallet_type: 'internal',
-          currency: 'credits'
+          wallet_type: user.role === 'freelancer' ? 'internal' : 'escrow',
+          currency: user.role === 'freelancer' ? 'credits' : 'USD'
         }
       };
       
@@ -78,12 +73,7 @@ export class WalletController {
         return;
       }
 
-      if (user.role !== 'freelancer') {
-        const errorResponse = { error: 'Only freelancers have transaction history' };
-        res.status(403).json(errorResponse);
-        return;
-      }
-
+      // ✅ Allow both employers and freelancers to view transaction history
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
 

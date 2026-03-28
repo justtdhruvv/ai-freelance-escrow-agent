@@ -6,12 +6,14 @@ import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react'
 import { authService } from '../services/authService'
 
 interface FormData {
+  name: string
   email: string
   password: string
   confirmPassword: string
 }
 
 interface FormErrors {
+  name?: string
   email?: string
   password?: string
   confirmPassword?: string
@@ -27,6 +29,7 @@ interface PasswordStrength {
 
 export default function SignupForm() {
   const [formData, setFormData] = useState<FormData>({
+    name: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -154,13 +157,14 @@ export default function SignupForm() {
 
     try {
       const response = await authService.signup({
+        name: formData.name,
         email: formData.email,
         password: formData.password,
         role: 'freelancer' // Default role
       })
 
-      // Show success message and redirect to login
-      window.location.href = '/login?message=Account created successfully! Please sign in.'
+      // Show success message and redirect to dashboard
+      window.location.href = '/dashboard?message=Account created successfully! Welcome!'
     } catch (error) {
       setErrors({
         general: error instanceof Error ? error.message : 'Sign up failed. Please try again.'
@@ -180,6 +184,9 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Name Field */}
+      
+
       {/* Email Field */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -203,7 +210,7 @@ export default function SignupForm() {
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-sm text-red-600"
+            className="text-red-500 text-sm mt-1"
           >
             {errors.email}
           </motion.p>

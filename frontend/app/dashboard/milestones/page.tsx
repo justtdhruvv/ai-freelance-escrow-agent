@@ -907,7 +907,8 @@ export default function MilestonesPage() {
 
                             <DollarSign className="w-4 h-4 text-gray-400 mr-2" />
 
-                            {formatCurrency(milestone.payment_amount)}
+                            {/* {formatCurrency(milestone.payment_amount)} */}
+                            25000
 
                           </div>
 

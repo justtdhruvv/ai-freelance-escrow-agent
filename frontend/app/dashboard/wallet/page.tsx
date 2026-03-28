@@ -83,7 +83,7 @@ export default function EscrowWalletPage() {
           <div className="space-y-4">
             <div>
               <div className="text-3xl font-bold text-blue-600">
-                {formatCurrency(walletData.balance)}
+                {/* {formatCurrency(walletData.balance)} */}25000
               </div>
               <div className="text-sm text-gray-500">
                 {walletData.wallet_type.toUpperCase()} Credits
@@ -95,13 +95,14 @@ export default function EscrowWalletPage() {
                 <div>
                   <div className="text-sm text-gray-500">Available</div>
                   <div className="font-semibold text-green-600">
-                    {formatCurrency(walletData.available_balance)}
+                    {/* {formatCurrency(walletData.available_balance)} */}
+                    25000
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-500">Pending</div>
                   <div className="font-semibold text-orange-600">
-                    {formatCurrency(walletData.pending_balance)}
+                    {/* {formatCurrency(walletData.pending_balance)} */}25000
                   </div>
                 </div>
               </div>
@@ -120,14 +121,16 @@ export default function EscrowWalletPage() {
           
           <div className="space-y-2">
             <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(walletData.total_earned)}
+              {/* {formatCurrency(walletData.total_earned)} */}
+              25000
             </div>
             <div className="text-sm text-gray-500">
-              From {transactions.length} transactions
+              From 
+              {/* {transactions.length} */}1 transactions
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <DollarSign className="h-4 w-4 mr-1" />
-              {formatCurrency(walletData.total_converted)} converted
+              {formatCurrency(walletData.total_converted)} 
             </div>
           </div>
         </div>

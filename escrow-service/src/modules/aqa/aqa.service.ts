@@ -342,6 +342,7 @@ export class AQAService {
       verdict: result.verdict || 'error',
       pass_rate: result.pass_rate || 0,
       payment_trigger: result.payment_trigger || 'none',
+      payment_status: result.verdict === 'passed' || result.verdict === 'partial' ? 'pending' : 'none',
       audit_report: result.audit_report ? JSON.stringify(result.audit_report) : null,
       all_checks: result.all_checks && result.all_checks.length > 0 ? JSON.stringify(result.all_checks) : null,
       milestone_amount: result.milestone_amount || 0,
@@ -374,8 +375,8 @@ export class AQAService {
         const { WalletService } = await import('../wallets/wallet.service');
         const walletService = new WalletService();
 
-        // Get milestone details directly from database
-        const milestone = await db('milestones')
+        // Get milestone details from milestone_checks table (correct table)
+        const milestone = await trx('milestone_checks')
           .where({ milestone_id: aqaResult.milestone_id })
           .first();
         
@@ -397,7 +398,7 @@ export class AQAService {
           // Full payment for passed milestones
           await walletService.addCredits(
             project.freelancer_id,  // Get freelancer_id from project
-            milestone.payment_amount,  // Use milestone payment_amount
+            milestone.payment_amount,  // Use payment_amount from milestone_checks
             `Full payment for milestone: ${milestone.title}`,
             aqaResult.milestone_id,  // Reference to milestone
             'milestone_payment'

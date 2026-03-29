@@ -22,15 +22,24 @@ import {
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../store'
 import { logout, initializeAuth } from '../store/slices/authSlice'
+import { getUserRole } from '../utils/roleGuard'
 
+// Define roles properly
+type UserRole = 'employer' | 'freelancer'
+
+// Menu config with role-based access
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: FolderOpen, label: 'Projects', href: '/dashboard/projects' },
-  { icon: Users, label: 'Clients', href: '/dashboard/clients' },
   { icon: Target, label: 'Milestones', href: '/dashboard/milestones' },
-  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/escrow' },
   { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
-  { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score' },
+  
+  // ❌ ONLY freelancer
+  { icon: Users, label: 'Clients', href: '/dashboard/clients', roles: ['freelancer'] },
+  { icon: Wallet, label: 'Escrow Wallet', href: '/dashboard/wallet', roles: ['freelancer'] },
+  { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score', roles: ['freelancer'] },
+  
+  // ✅ BOTH
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ]
@@ -40,6 +49,8 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  console.log('🔥 DASHBOARD LAYOUT RENDERING!')
+  
   const router = useRouter()
   const pathname = usePathname()
   const dispatch = useDispatch<AppDispatch>()
@@ -49,6 +60,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+
+  // 🔥 Get user role
+  const userRole = getUserRole() as UserRole
+  console.log('🔥 getUserRole() called:', userRole)
+  console.log('🔥 localStorage role directly:', localStorage.getItem('role'))
+
+  // 🔥 Filter menu based on role
+  const filteredMenuItems = menuItems.filter(item => {
+    // if no roles defined → show to all
+    if (!item.roles) return true
+
+    // check if current role allowed
+    return item.roles.includes(userRole)
+  })
+
+  // 🔍 DEBUG: Log everything
+  console.log('=== LAYOUT SIDEBAR DEBUG ===')
+  console.log('Raw userRole from getUserRole():', getUserRole())
+  console.log('Type-cast userRole:', userRole)
+  console.log('localStorage role:', localStorage.getItem('role'))
+  console.log('All menu items:', menuItems.map(item => ({ 
+    label: item.label, 
+    roles: item.roles || 'ALL',
+    hasRoles: !!item.roles 
+  })))
+  console.log('Filtered menu items:', filteredMenuItems.map(item => item.label))
+  console.log('=== END LAYOUT SIDEBAR DEBUG ===')
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -147,7 +185,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
-            {menuItems.map((item) => {
+            {filteredMenuItems.map((item) => {
               const isActive = pathname === item.href
               return (
                 <button

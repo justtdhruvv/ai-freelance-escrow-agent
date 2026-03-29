@@ -28,13 +28,8 @@ export class ClientBriefController {
         return;
       }
 
-      // Verify project exists and user owns it (check both freelancer and employer)
-      let project;
-      if (user.role === 'freelancer') {
-        project = await this.clientBriefService.getProjectByIdAndFreelancer(projectId, user.userId);
-      } else if (user.role === 'employer') {
-        project = await this.clientBriefService.getProjectByIdAndEmployer(projectId, user.userId);
-      }
+      // Verify project exists and user owns it
+      const project = await this.clientBriefService.getProjectByIdAndEmployer(projectId, user.userId);
       
       if (!project) {
         const errorResponse = { error: 'Project not found or access denied' };
@@ -42,10 +37,10 @@ export class ClientBriefController {
         return;
       }
 
-      const { client_brief, domain }: CreateClientBriefInput = req.body;
+      const { raw_text, domain }: CreateClientBriefInput = req.body;
 
-      if (!client_brief || typeof client_brief !== 'string' || client_brief.trim().length === 0) {
-        const errorResponse = { error: 'client_brief is required and must be a non-empty string' };
+      if (!raw_text || typeof raw_text !== 'string' || raw_text.trim().length === 0) {
+        const errorResponse = { error: 'raw_text is required and must be a non-empty string' };
         res.status(400).json(errorResponse);
         return;
       }
@@ -57,7 +52,7 @@ export class ClientBriefController {
       }
 
       const brief = await this.clientBriefService.createClientBrief({
-        client_brief: client_brief.trim(),
+        raw_text: raw_text.trim(),
         domain,
         project_id: projectId
       });

@@ -24,14 +24,15 @@ export default function LoginForm() {
     password: '',
     rememberMe: false
   })
+
   const [errors, setErrors] = useState<FormErrors>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
   const router = useRouter()
 
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
   const validateForm = (): boolean => {
@@ -40,7 +41,7 @@ export default function LoginForm() {
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address'
+      newErrors.email = 'Invalid email'
     }
 
     if (!formData.password.trim()) {
@@ -58,10 +59,6 @@ export default function LoginForm() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
-
-    if (errors[name as keyof FormErrors]) {
-      setErrors(prev => ({ ...prev, [name]: undefined }))
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,21 +69,33 @@ export default function LoginForm() {
     setIsLoading(true)
     setErrors({})
 
-        try {
+    try {
       const response = await authService.login({
         email: formData.email,
         password: formData.password
       })
 
-      // Token is already saved by authService.login()
-      // No need to save it again here
+      // ✅ Try getting role from response
+      let role = response?.user?.role
 
-      // Optional remember me
+      // ✅ Fallback: extract from token
+      if (!role) {
+        const token = localStorage.getItem('authToken')
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          role = payload.role
+        }
+      }
+
+      // ✅ Save role
+      if (role) {
+        localStorage.setItem('role', role)
+      }
+
       if (formData.rememberMe) {
         localStorage.setItem("rememberMe", "true")
       }
 
-      // Use router.replace to prevent history buildup
       router.replace("/dashboard")
 
     } catch (error) {
@@ -98,11 +107,7 @@ export default function LoginForm() {
     }
   }
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(prev => !prev)
-  }
-
-  return (
+ return (
     // <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
 
       <motion.div

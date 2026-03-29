@@ -24,7 +24,7 @@ export default function CreateProjectBriefModal({
   projectId 
 }: CreateProjectBriefModalProps) {
   const [formData, setFormData] = useState({
-    client_brief: '',
+    raw_text: '',
     domain: 'general' as 'code' | 'design' | 'content' | 'general'
   })
 
@@ -42,7 +42,7 @@ export default function CreateProjectBriefModal({
   }
 
   const validateForm = () => {
-    if (!formData.client_brief.trim()) {
+    if (!formData.raw_text.trim()) {
       setError('Project brief is required')
       return false
     }
@@ -70,7 +70,7 @@ export default function CreateProjectBriefModal({
       
       console.log('Project brief created:', {
         projectId,
-        client_brief: formData.client_brief,
+        raw_text: formData.raw_text,
         domain: formData.domain
       })
       
@@ -167,8 +167,8 @@ export default function CreateProjectBriefModal({
                 Project Brief <span className="text-red-500">*</span>
               </label>
               <textarea
-                name="client_brief"
-                value={formData.client_brief}
+                name="raw_text"
+                value={formData.raw_text}
                 onChange={handleInputChange}
                 required
                 rows={4}

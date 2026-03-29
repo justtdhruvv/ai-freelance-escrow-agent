@@ -40,6 +40,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  useEffect(() => {
+  console.log('REAL ROLE:', localStorage.getItem('role'))
+}, [])
+
   const toggleSidebar = () => {
     if (isMobile) {
       setSidebarOpen(!sidebarOpen)

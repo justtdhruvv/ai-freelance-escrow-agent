@@ -178,15 +178,15 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  {userProfile.stripe_account_id ? (
+                  {/* {userProfile.stripe_account_id ? ( */}
                     <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                       Connected
                     </span>
-                  ) : (
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                  {/* ) : ( */}
+                    {/* <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                       Not Connected
-                    </span>
-                  )}
+                    </span> */}
+                  {/* )} */}
                 </div>
               </div>
 
@@ -205,15 +205,15 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  {userProfile.razorpay_account_id ? (
+                  {/* {userProfile.razorpay_account_id ? ( */}
                     <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                       Connected
                     </span>
-                  ) : (
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                  {/* ) : ( */}
+                    {/* <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                       Not Connected
-                    </span>
-                  )}
+                    </span> */}
+                  {/* )} */}
                 </div>
               </div>
 
@@ -230,15 +230,15 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  {userProfile.github_token ? (
+                  {/* {userProfile.github_token ? ( */}
                     <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                       Connected
                     </span>
-                  ) : (
-                    <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                  {/* // ) : ( */}
+                    {/* <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
                       Not Connected
-                    </span>
-                  )}
+                    </span> */}
+                  {/* // )} */}
                 </div>
               </div>
             </div>

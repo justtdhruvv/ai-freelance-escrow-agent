@@ -79,7 +79,7 @@ export class PaymentService {
       const order = await this.razorpayService.createOrder({
         amount: amountInPaise,
         currency: 'INR',
-        receipt: `project_${projectId}`,
+        receipt: `proj_${projectId.substring(0, 8)}`, // Use first 8 chars of UUID to stay under 40 limit
         notes: {
           project_id: projectId,
           type: 'escrow_hold'
@@ -182,6 +182,99 @@ export class PaymentService {
   }
 
   /**
+   * Release prorated milestone payment to freelancer (for partial AQA results)
+   */
+  async releaseProratedPayment(milestoneId: string, passRate: number, triggeredBy: 'aqa_auto' | 'manual' | 'dispute_resolution'): Promise<PaymentEvent> {
+    const trx = await db.transaction();
+
+    try {
+      // Get milestone details
+      const milestone = await trx('milestone_checks')
+        .where({ milestone_id: milestoneId })
+        .first();
+
+      if (!milestone) {
+        throw new Error('Milestone not found');
+      }
+
+      // Validate pass rate
+      if (passRate < 0 || passRate > 1) {
+        throw new Error('Pass rate must be between 0 and 1');
+      }
+
+      // Get project details
+      const project = await trx('projects')
+        .where({ project_id: milestone.project_id })
+        .first();
+
+      if (!project) {
+        throw new Error('Project not found');
+      }
+
+      // Calculate prorated amount
+      const proratedAmount = Math.floor(milestone.payment_amount * passRate);
+
+      if (proratedAmount <= 0) {
+        throw new Error('Prorated amount must be greater than 0');
+      }
+
+      // Get or create freelancer wallet
+      let freelancerWallet = await trx('freelancer_wallets')
+        .where({ freelancer_id: project.freelancer_id })
+        .first();
+
+      if (!freelancerWallet) {
+        const walletId = uuidv4();
+        await trx('freelancer_wallets').insert({
+          wallet_id: walletId,
+          freelancer_id: project.freelancer_id,
+          balance: 0,
+          created_at: new Date()
+        });
+        freelancerWallet = { wallet_id: walletId, freelancer_id: project.freelancer_id, balance: 0 };
+      }
+
+      // Update wallet balance with prorated amount (INTERNAL CREDITS)
+      await trx('freelancer_wallets')
+        .where({ freelancer_id: project.freelancer_id })
+        .update({ 
+          balance: freelancerWallet.balance + proratedAmount 
+        });
+
+      // Create payment event record (INTERNAL CREDIT RELEASE)
+      const paymentEvent = await this.createPaymentEventInTransaction(trx, {
+        project_id: milestone.project_id,
+        milestone_id: milestoneId,
+        type: 'prorated_release',
+        amount: proratedAmount,
+        // NO razorpay_transfer_id needed for internal credits
+        triggered_by: triggeredBy
+      });
+
+      // 4. Update PFI score for partial milestone completion
+      await this.updatePfiScore(project.freelancer_id, 'milestone_passed'); // Partial still gets some points
+
+      await trx.commit();
+
+      logger.info('Prorated milestone payment released with internal credits', {
+        milestone_id: milestoneId,
+        prorated_amount: proratedAmount,
+        original_amount: milestone.payment_amount,
+        pass_rate: passRate,
+        freelancer_id: project.freelancer_id,
+        new_wallet_balance: freelancerWallet.balance + proratedAmount
+      });
+
+      return paymentEvent;
+
+    } catch (error) {
+      await trx.rollback();
+      logger.error('Error releasing prorated milestone payment', error);
+      throw error;
+    }
+  }
+
+  /**
    * Release milestone payment to freelancer
    */
   async releaseMilestonePayment(milestoneId: string, triggeredBy: 'aqa_auto' | 'manual' | 'dispute_resolution'): Promise<PaymentEvent> {
@@ -236,39 +329,18 @@ export class PaymentService {
           .first();
       }
 
-      // Convert amount to paise for Razorpay transfer
-      const amountInPaise = this.razorpayService.convertToPaise(milestone.amount);
-
-      // Create real Razorpay transfer
-      const transfer = await this.razorpayService.createTransfer({
-        amount: amountInPaise,
-        account_id: project.freelancer_id, // This should be Razorpay account ID
-        notes: {
-          project_id: milestone.project_id,
-          milestone_id: milestoneId,
-          type: 'milestone_release'
-        }
-      });
-
-      // All operations using Knex transactions:
-
-      // 1. Deduct milestone amount from project escrow_balance
-      await trx('projects')
-        .where({ project_id: milestone.project_id })
-        .decrement('escrow_balance', milestone.amount);
-
-      // 2. Increase freelancer_wallet balance
+      // Update freelancer_wallet balance with INTERNAL CREDITS
       await trx('freelancer_wallets')
         .where({ freelancer_id: project.freelancer_id })
         .increment('balance', milestone.amount);
 
-      // 3. Create payment_event milestone_release
+      // Create payment_event milestone_release (INTERNAL CREDITS)
       const paymentEvent = await this.createPaymentEventInTransaction(trx, {
         project_id: milestone.project_id,
         milestone_id: milestoneId,
         type: 'milestone_release',
         amount: milestone.amount,
-        razorpay_transfer_id: transfer.id,
+        // NO razorpay_transfer_id needed for internal credits
         triggered_by: triggeredBy
       });
 
@@ -277,9 +349,8 @@ export class PaymentService {
 
       await trx.commit();
 
-      logger.info('Milestone payment released with real Razorpay transfer', {
+      logger.info('Milestone payment released with internal credits', {
         milestone_id: milestoneId,
-        transfer_id: transfer.id,
         amount: milestone.amount,
         freelancer_id: project.freelancer_id,
         new_wallet_balance: freelancerWallet.balance + milestone.amount
@@ -296,7 +367,7 @@ export class PaymentService {
   /**
    * Update PFI score based on milestone completion
    */
-  private async updatePfiScore(freelancerId: string, action: 'milestone_passed' | 'milestone_failed' | 'milestone_delayed'): Promise<void> {
+  public async updatePfiScore(freelancerId: string, action: 'milestone_passed' | 'milestone_failed' | 'milestone_delayed'): Promise<void> {
     try {
       let scoreChange = 0;
 

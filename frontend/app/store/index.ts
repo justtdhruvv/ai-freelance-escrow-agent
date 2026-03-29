@@ -15,6 +15,8 @@ import { projectsApi } from './api/projectsApi'
 import { clientsApi } from './api/clientsApi'
 import { escrowApi } from './api/escrowApi'
 import { contractApi } from './api/contractApi'
+import { walletApi } from './api/walletApi'
+import { paymentApi } from './api/paymentApi'
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +32,8 @@ export const store = configureStore({
     [clientsApi.reducerPath]: clientsApi.reducer,
     [escrowApi.reducerPath]: escrowApi.reducer,
     [contractApi.reducerPath]: contractApi.reducer,
+    [walletApi.reducerPath]: walletApi.reducer,
+    [paymentApi.reducerPath]: paymentApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -37,7 +41,9 @@ export const store = configureStore({
       projectsApi.middleware,
       clientsApi.middleware,
       escrowApi.middleware,
-      contractApi.middleware
+      contractApi.middleware,
+      walletApi.middleware,
+      paymentApi.middleware
     ),
 })
 

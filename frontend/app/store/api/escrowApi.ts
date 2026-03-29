@@ -1,4 +1,5 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { createApi } from '@reduxjs/toolkit/query/react'
+import { baseQueryWithAuth } from './baseApi'
 import { Transaction, EscrowAccount } from '../slices/escrowSlice'
 
 export interface DepositRequest {
@@ -22,32 +23,23 @@ export interface RefundRequest {
 
 export const escrowApi = createApi({
   reducerPath: 'escrowApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: '/api',
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`)
-      }
-      return headers
-    },
-  }),
+  baseQuery: baseQueryWithAuth,
   tagTypes: ['Escrow', 'Transaction'],
   endpoints: (builder) => ({
     getAccount: builder.query<EscrowAccount, void>({
-      query: () => '/escrow/account',
+      query: () => 'escrow/account',
       providesTags: ['Escrow'],
     }),
     getTransactions: builder.query<Transaction[], { limit?: number; offset?: number }>({
       query: ({ limit, offset }) => ({
-        url: '/escrow/transactions',
+        url: 'escrow/transactions',
         params: { limit, offset },
       }),
       providesTags: ['Transaction'],
     }),
     deposit: builder.mutation<Transaction, DepositRequest>({
       query: (data) => ({
-        url: '/escrow/deposit',
+        url: 'escrow/deposit',
         method: 'POST',
         body: data,
       }),
@@ -55,7 +47,7 @@ export const escrowApi = createApi({
     }),
     release: builder.mutation<Transaction, ReleaseRequest>({
       query: (data) => ({
-        url: '/escrow/release',
+        url: 'escrow/release',
         method: 'POST',
         body: data,
       }),
@@ -63,7 +55,7 @@ export const escrowApi = createApi({
     }),
     refund: builder.mutation<Transaction, RefundRequest>({
       query: (data) => ({
-        url: '/escrow/refund',
+        url: 'escrow/refund',
         method: 'POST',
         body: data,
       }),

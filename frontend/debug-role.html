@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Role Storage</title>
+</head>
+<body>
+    <h1>Debug Role Storage</h1>
+    <button onclick="checkStorage()">Check localStorage</button>
+    <div id="result"></div>
+    
+    <script>
+        function checkStorage() {
+            const role = localStorage.getItem('role');
+            const user = localStorage.getItem('user');
+            const token = localStorage.getItem('authToken');
+            
+            document.getElementById('result').innerHTML = `
+                <h2>Current localStorage:</h2>
+                <p><strong>Role:</strong> ${role || 'NOT FOUND'}</p>
+                <p><strong>User:</strong> ${user || 'NOT FOUND'}</p>
+                <p><strong>Token:</strong> ${token ? 'EXISTS' : 'NOT FOUND'}</p>
+                <p><strong>Parsed User:</strong> ${user ? JSON.stringify(JSON.parse(user), null, 2) : 'N/A'}</p>
+            `;
+        }
+        
+        // Auto-check on load
+        checkStorage();
+    </script>
+</body>
+</html>

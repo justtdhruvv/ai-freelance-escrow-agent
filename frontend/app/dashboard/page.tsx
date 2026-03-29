@@ -10,6 +10,7 @@ import { setProjects } from '../store/slices/projectSlice'
 import { useCreateProjectMutation } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
 import { useRouter } from 'next/dist/client/components/navigation'
+import CreateProjectModal from '../components/CreateProjectModal'
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>()
@@ -149,7 +150,7 @@ export default function DashboardPage() {
             <p className="text-gray-600 mt-2">Welcome back to your AI Escrow dashboard, {user?.name || 'User'}!</p>
           </div>
           <button
-            onClick={() => router.push('/dashboard/projects')}
+            onClick={() => setShowCreateModal(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -280,55 +281,7 @@ export default function DashboardPage() {
 
       {/* Create Project Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Create New Project</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Price ($)</label>
-                <input
-                  type="number"
-                  value={createFormData.total_price}
-                  onChange={(e) => setCreateFormData({ ...createFormData, total_price: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Timeline (days)</label>
-                <input
-                  type="number"
-                  value={createFormData.timeline_days}
-                  onChange={(e) => setCreateFormData({ ...createFormData, timeline_days: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client ID (optional)</label>
-                <input
-                  type="text"
-                  value={createFormData.client_id}
-                  onChange={(e) => setCreateFormData({ ...createFormData, client_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#AD7D56]"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateProject}
-                disabled={isCreating}
-                className="px-4 py-2 bg-[#AD7D56] text-white rounded-lg hover:bg-[#8B6344] disabled:opacity-50"
-              >
-                {isCreating ? 'Creating...' : 'Create Project'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateProjectModal onClose={() => setShowCreateModal(false)} />
       )}
     </div>
   )

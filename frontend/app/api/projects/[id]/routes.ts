@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-const BACKEND = "http://localhost:3000"
+const BACKEND = process.env.BACKEND_URL || 'http://localhost:3000'
 
 export async function PUT(req: Request,{params}:{params:{id:string}}){
 

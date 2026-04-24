@@ -1,6 +1,6 @@
 from datetime import datetime
 from app.schemas.models import AuditReport, AQAResult
-from app.utils.openrouter_client import generate_json_async as generate_json
+from app.utils.gemini_client import generate_json_async as generate_json
 from app.prompts.audit_prompt import build_audit_system_prompt, build_audit_user_prompt
 
 async def enhance_audit_report(aqa_result: AQAResult) -> AuditReport:

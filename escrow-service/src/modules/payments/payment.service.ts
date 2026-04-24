@@ -1,6 +1,5 @@
 import db from '../../config/database';
 import { v4 as uuidv4 } from 'uuid';
-import { RazorpayService } from './razorpay.service';
 import { logger } from '../../utils/logger';
 
 export interface PaymentEvent {
@@ -51,132 +50,48 @@ export interface FreelancerWallet {
 }
 
 export class PaymentService {
-  private razorpayService: RazorpayService;
-
-  constructor() {
-    this.razorpayService = new RazorpayService();
-  }
-
   /**
-   * Create real escrow order for project funding
+   * Simulate client funding project into escrow — no payment gateway needed
    */
-  async createEscrowOrder(projectId: string, amount: number): Promise<{
-    order_id: string;
-    amount: number;
-    currency: string;
-  }> {
-    try {
-      // Verify project exists
-      const project = await this.getProjectById(projectId);
-      if (!project) {
-        throw new Error('Project not found');
-      }
-
-      // Convert amount to paise for Razorpay format
-      const amountInPaise = this.razorpayService.convertToPaise(amount);
-
-      // Create real Razorpay order
-      const order = await this.razorpayService.createOrder({
-        amount: amountInPaise,
-        currency: 'INR',
-        receipt: `proj_${projectId.substring(0, 8)}`, // Use first 8 chars of UUID to stay under 40 limit
-        notes: {
-          project_id: projectId,
-          type: 'escrow_hold'
-        }
-      });
-
-      // Update project with Razorpay order ID
-      await this.updateProjectRazorpayOrderId(projectId, order.id);
-
-      logger.info('Real escrow order created', {
-        project_id: projectId,
-        order_id: order.id,
-        amount: amountInPaise
-      });
-
-      return {
-        order_id: order.id,
-        amount: amountInPaise,
-        currency: 'INR'
-      };
-    } catch (error) {
-      logger.error('Error creating escrow order', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Confirm real payment and update escrow balance
-   */
-  async confirmPayment(input: PaymentConfirmInput): Promise<PaymentEvent> {
-    const { order_id, payment_id, razorpay_signature } = input;
-
-    // Verify payment signature
-    const isValidSignature = this.razorpayService.verifyPaymentSignature(
-      order_id,
-      payment_id,
-      razorpay_signature
-    );
-
-    if (!isValidSignature) {
-      throw new Error('Invalid payment signature');
-    }
-
-    // Fetch payment details from Razorpay
-    const payment = await this.razorpayService.fetchPayment(payment_id);
-    
-    if (payment.status !== 'captured') {
-      throw new Error('Payment not captured');
-    }
-
-    // Fetch order details to get project_id
-    const order = await this.razorpayService.fetchOrder(order_id);
-    const projectId = order.notes?.project_id;
-    
-    if (!projectId) {
-      throw new Error('Project ID not found in order notes');
+  async simulateFundProject(projectId: string): Promise<PaymentEvent> {
+    const project = await this.getProjectById(projectId);
+    if (!project) throw new Error('Project not found');
+    if (!project.total_price || project.total_price <= 0) throw new Error('Project must have a valid total price');
+    if (project.status !== 'draft' && project.status !== 'sop_review' && project.status !== 'client_review') {
+      throw new Error('Project is already funded or not in a fundable state');
     }
 
     const trx = await db.transaction();
-
     try {
-      // Convert amount from paise to rupees for database storage
-      const amountInRupees = this.razorpayService.convertToRupees(typeof payment.amount === 'string' ? parseInt(payment.amount) : payment.amount);
+      const simOrderId = `sim_order_${uuidv4().substring(0, 16)}`;
 
-      // Increase project escrow_balance
       await trx('projects')
         .where({ project_id: projectId })
-        .increment('escrow_balance', amountInRupees);
+        .update({
+          escrow_balance: project.total_price,
+          status: 'active',
+          razorpay_order_id: simOrderId
+        });
 
-      // Create escrow hold payment event
       const paymentEvent = await this.createPaymentEventInTransaction(trx, {
         project_id: projectId,
         type: 'escrow_hold',
-        amount: amountInRupees,
-        razorpay_order_id: order_id,
-        razorpay_payment_id: payment_id,
+        amount: project.total_price,
+        razorpay_order_id: simOrderId,
         triggered_by: 'manual'
       });
 
-      // Update project status to active
-      await trx('projects')
-        .where({ project_id: projectId })
-        .update({ status: 'active' });
-
       await trx.commit();
 
-      logger.info('Real payment confirmed and escrow balance updated', {
+      logger.info('Simulated project funding complete', {
         project_id: projectId,
-        payment_id: payment_id,
-        order_id: order_id,
-        amount: amountInRupees
+        amount: project.total_price,
+        sim_order_id: simOrderId
       });
 
       return paymentEvent;
     } catch (error) {
       await trx.rollback();
-      logger.error('Error confirming payment', error);
       throw error;
     }
   }
@@ -501,10 +416,4 @@ export class PaymentService {
     }
   }
 
-  /**
-   * Get Razorpay service for testing
-   */
-  getRazorpayService(): RazorpayService {
-    return this.razorpayService;
-  }
 }

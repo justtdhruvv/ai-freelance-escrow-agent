@@ -42,6 +42,8 @@ import { useAddProjectBriefMutation } from '../../../store/api/projectsApi'
 
 import { setCurrentProject } from '../../../store/slices/projectSlice'
 
+import { useFundProjectMutation } from '../../../store/api/paymentApi'
+
 
 
 export default function ProjectDetailPage() {
@@ -83,6 +85,9 @@ export default function ProjectDetailPage() {
   const [approveFreelancer, { isLoading: isApprovingFreelancer }] = useApproveFreelancerMutation()
 
   const [lockContract, { isLoading: isLockingContract }] = useLockContractMutation()
+  const [fundProject, { isLoading: isFunding }] = useFundProjectMutation()
+  const [showFundModal, setShowFundModal] = useState(false)
+  const [fundMessage, setFundMessage] = useState('')
 
 
 
@@ -169,6 +174,26 @@ export default function ProjectDetailPage() {
     } catch (error) {
 
       console.error('Failed to lock contract:', error)
+
+    }
+
+  }
+
+
+
+  const handleFundProject = async () => {
+
+    try {
+
+      const result = await fundProject({ projectId }).unwrap()
+
+      setFundMessage(result.message)
+
+      setShowFundModal(false)
+
+    } catch (error: any) {
+
+      setFundMessage(error?.data?.error || 'Failed to fund project')
 
     }
 
@@ -659,6 +684,145 @@ export default function ProjectDetailPage() {
         </motion.div>
 
       </div>
+
+
+
+      {/* Fund Project Banner — shown to employer when project not yet active */}
+
+      {project.status !== 'active' && project.status !== 'completed' && user?.role === 'employer' && (
+
+        <motion.div
+
+          initial={{ opacity: 0, y: 20 }}
+
+          animate={{ opacity: 1, y: 0 }}
+
+          className="bg-linear-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mb-8"
+
+        >
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <h3 className="text-lg font-semibold text-green-900">Fund This Project</h3>
+
+              <p className="text-green-700 mt-1">
+
+                Lock ₹{(project.total_price / 100).toLocaleString('en-IN')} into escrow to activate the project.
+
+                Funds are automatically released to the freelancer when milestones pass quality checks.
+
+              </p>
+
+            </div>
+
+            <button
+
+              onClick={() => setShowFundModal(true)}
+
+              className="ml-6 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium whitespace-nowrap"
+
+            >
+
+              Fund Project
+
+            </button>
+
+          </div>
+
+          {fundMessage && (
+
+            <div className="mt-3 p-3 bg-white border border-green-300 rounded-lg text-green-800 text-sm">
+
+              {fundMessage}
+
+            </div>
+
+          )}
+
+        </motion.div>
+
+      )}
+
+
+
+      {project.status === 'active' && (
+
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-8 flex items-center space-x-3">
+
+          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+
+          <p className="text-green-800 font-medium">
+
+            Project is funded! ₹{(project.total_price / 100).toLocaleString('en-IN')} is held in escrow and will be released to the freelancer as milestones are completed.
+
+          </p>
+
+        </div>
+
+      )}
+
+
+
+      {/* Fund Project Confirmation Modal */}
+
+      {showFundModal && (
+
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Escrow Funding</h3>
+
+            <p className="text-gray-600 mb-4">
+
+              You are about to lock <span className="font-bold text-green-700">₹{(project.total_price / 100).toLocaleString('en-IN')}</span> into escrow for this project.
+              Funds will be automatically released to the freelancer when milestones pass automated quality checks.
+
+            </p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-sm text-blue-800">
+
+              This is a simulated payment — no real money will be charged.
+
+            </div>
+
+            <div className="flex justify-end space-x-3">
+
+              <button
+
+                onClick={() => setShowFundModal(false)}
+
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+
+              >
+
+                Cancel
+
+              </button>
+
+              <button
+
+                onClick={handleFundProject}
+
+                disabled={isFunding}
+
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium"
+
+              >
+
+                {isFunding ? 'Processing...' : 'Confirm & Fund'}
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      )}
 
 
 

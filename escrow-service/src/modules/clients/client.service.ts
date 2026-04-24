@@ -161,18 +161,22 @@ export class ClientService {
       // Create client account and relation
       const { user, generatedPassword } = await this.createClientAccount(freelancerId, clientData);
 
-      // Send email with credentials
-      await this.sendClientAccountEmail(user.email, generatedPassword);
-
-      logger.info('Client account created and email sent', { 
-        freelancerId,
-        clientId: user.user_id, 
-        email: user.email 
-      });
-
-      return {
-        message: 'Client account created and email sent'
-      };
+      // Try to send email — non-fatal if it fails
+      try {
+        await this.sendClientAccountEmail(user.email, generatedPassword);
+        logger.info('Client account created and email sent', {
+          freelancerId,
+          clientId: user.user_id,
+          email: user.email
+        });
+        return { message: 'Client account created and email sent' };
+      } catch (emailError) {
+        logger.error('Client created but email failed — check SMTP config', {
+          email: user.email,
+          generatedPassword
+        });
+        return { message: 'Client account created (email delivery failed)' };
+      }
     } catch (error) {
       logger.error('Error in createClientAndSendEmail', error);
       throw error;

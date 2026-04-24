@@ -7,12 +7,13 @@ import { clientBriefRouter } from './modules/clientBrief/clientBrief.routes';
 import { verificationContractRouter } from './modules/verificationContract/verificationContract.routes';
 import { userRouter } from './modules/users/user.routes';
 import { clientRouter } from './modules/clients/client.routes';
-import { paymentRouter, webhookRouter } from './modules/payments/payment.routes';
+import { paymentRouter } from './modules/payments/payment.routes';
 import { aiRouter } from './modules/ai/ai.routes';
 import sopRouter from './modules/sops/sop.routes';
 import submissionRouter from './modules/submissions/submission.routes';
 import aqaRouter from './modules/aqa/aqa.routes';
 import walletRouter from './modules/wallets/wallet.routes';
+import disputeRouter from './modules/disputes/dispute.routes';
 
 const app = express();
 
@@ -39,10 +40,10 @@ app.use('/projects', verificationContractRouter);
 app.use('/users', userRouter);
 app.use('/clients', clientRouter);
 app.use('/payments', paymentRouter);
-app.use('/payments', webhookRouter);
 app.use('/wallet', walletRouter);
 app.use('/ai', aiRouter);
 app.use('/sops', sopRouter);
+app.use('/disputes', disputeRouter);
 app.use('/', submissionRouter);
 app.use('/', aqaRouter);
 

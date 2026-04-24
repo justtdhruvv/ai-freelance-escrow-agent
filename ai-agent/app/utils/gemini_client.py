@@ -97,12 +97,26 @@ async def generate_json_async(prompt: str, system: str) -> dict:
     Raises ValueError if parsing fails.
     """
     system_with_json_directive = f"{system}\n\nYou MUST respond with valid JSON only."
-    
+
     response_text = await generate_async(prompt, system_with_json_directive)
     cleaned_text = _strip_markdown_json(response_text)
-    
+
     try:
         parsed = json.loads(cleaned_text)
         return parsed
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse Gemini JSON response: {str(e)}\nResponse was: {cleaned_text}")
+
+def validate_gemini_connection():
+    try:
+        result = generate("Hello", "You are a test assistant.")
+        return {
+            "status": "success",
+            "message": "Gemini connection successful",
+            "response_preview": result[:100]
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }

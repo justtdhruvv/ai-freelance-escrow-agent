@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (projectsData) {
-      dispatch(setProjects(projectsData))
+      dispatch(setProjects(projectsData as any))
     }
   }, [projectsData, dispatch])
 

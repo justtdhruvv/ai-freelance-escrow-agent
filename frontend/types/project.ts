@@ -26,25 +26,26 @@ export interface VerificationContract {
 export interface Project {
   // Core fields from API
   project_id: string
-  employer_id: string
-  freelancer_id: string
-  status: ProjectStatus
+  employer_id?: string
+  freelancer_id?: string
+  status?: ProjectStatus | string
   total_price: number
   timeline_days: number
-  created_at: string
+  created_at?: string
   updated_at?: string
   repo_link?: string
   name?: string
   client_id?: string
-  brief?: ProjectBrief
-  contract?: VerificationContract
-  
+  brief?: ProjectBrief | { raw_text: string; domain: string }
+  contract?: VerificationContract | any
+  escrow_balance?: number
+  description?: string
+
   // Additional fields for UI components
   riskScore?: number
   totalEscrowAmount?: number
   milestones?: number
   progress?: number
-  description?: string
   deadline?: string
   startDate?: string
   budget?: number

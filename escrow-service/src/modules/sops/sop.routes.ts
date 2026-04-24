@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { SOPController } from './sop.controller';
 import { authenticateToken } from '../../middlewares/auth.middleware';
 
+
 const router = Router();
 const sopController = new SOPController();
 
@@ -22,5 +23,8 @@ router.get('/milestones/:milestone_id/checks', sopController.getVerificationChec
 
 // Get verification check by ID
 router.get('/checks/:check_id', sopController.getVerificationCheckById);
+
+// POST /sops/:sop_id/approve — approve SOP as the authenticated user's role
+router.post('/:sop_id/approve', authenticateToken, sopController.approveSOP);
 
 export default router;

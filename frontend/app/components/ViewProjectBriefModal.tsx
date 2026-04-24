@@ -5,6 +5,7 @@ import { X, FileText, Code, Palette, PenTool, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { TokenManager } from '../utils/authToken'
 import { ProjectBrief } from '../../types/project'
+import { API_URL } from '../utils/apiUrl'
 
 interface ViewProjectBriefModalProps {
   onClose: () => void
@@ -46,7 +47,7 @@ export default function ViewProjectBriefModal({
         const authHeaders = TokenManager.getAuthHeader()
         console.log('Auth headers:', authHeaders)
         
-        const response = await fetch(`http://localhost:3000/projects/${projectId}/brief`, {
+        const response = await fetch(`${API_URL}/projects/${projectId}/brief`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

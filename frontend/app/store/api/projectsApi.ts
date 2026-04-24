@@ -8,6 +8,8 @@ export interface Project {
 
   project_id: string
 
+  id?: string // alias used by some components
+
   name?: string
 
   total_price: number
@@ -15,6 +17,10 @@ export interface Project {
   timeline_days: number
 
   client_id?: string
+
+  employer_id?: string
+
+  freelancer_id?: string
 
   status?: string
 
@@ -24,7 +30,13 @@ export interface Project {
 
   brief?: ProjectBrief
 
+  contract?: any
+
   repo_link?: string
+
+  description?: string
+
+  escrow_balance?: number
 
 }
 
@@ -60,9 +72,11 @@ export interface CreateProjectRequest {
 
 export interface AddProjectBriefRequest {
 
-  client_brief: string
+  raw_text: string
 
-  domain: 'code' | 'design' | 'content' | 'general'
+  domain: 'code' | 'design' | 'content' | 'general' | string
+
+  client_brief?: string // legacy alias
 
 }
 
@@ -236,6 +250,28 @@ export interface CreateSubmissionRequest {
 
 
 
+export interface Dispute {
+  dispute_id: string
+  project_id: string
+  raised_by: string
+  dispute_type: string
+  description: string
+  status: 'open' | 'under_review' | 'resolved' | 'closed'
+  resolution?: string
+  resolved_by?: string
+  milestone_id?: string
+  created_at: string
+  resolved_at?: string
+  updated_at: string
+}
+
+export interface CreateDisputeRequest {
+  project_id: string
+  dispute_type: string
+  description: string
+  milestone_id?: string
+}
+
 export interface AQAResponse {
 
   aqa_id: string
@@ -291,7 +327,7 @@ export const projectsApi = createApi({
   ...baseApiConfig,
 
   reducerPath: 'projectsApi',
-  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission', 'MilestoneChecks'],
+  tagTypes: ['Project', 'Brief', 'Contract', 'User', 'SOP', 'Milestone', 'MilestoneSubmission', 'MilestoneChecks', 'Dispute'],
   endpoints: (builder) => ({
 
     getProjects: builder.query<Project[], void>({
@@ -466,7 +502,7 @@ export const projectsApi = createApi({
 
     }),
 
-    submitMilestone: builder.mutation<MilestoneSubmission, { projectId: string; milestoneId: string; data: CreateSubmissionRequest }>({
+    submitMilestone: builder.mutation<{ submission: MilestoneSubmission }, { projectId: string; milestoneId: string; data: CreateSubmissionRequest }>({
 
       query: ({ projectId, milestoneId, data }) => ({
 
@@ -512,6 +548,68 @@ export const projectsApi = createApi({
 
     }),
 
+    approveSOP: builder.mutation<SOP, string>({
+
+      query: (sopId) => ({
+
+        url: `/sops/${sopId}/approve`,
+
+        method: 'POST',
+
+      }),
+
+      invalidatesTags: ['SOP', 'Project'],
+
+    }),
+
+    createDispute: builder.mutation<Dispute, CreateDisputeRequest>({
+
+      query: (data) => ({
+
+        url: '/disputes',
+
+        method: 'POST',
+
+        body: data,
+
+      }),
+
+      invalidatesTags: ['Dispute', 'Project'],
+
+    }),
+
+    getMyDisputes: builder.query<Dispute[], void>({
+
+      query: () => '/disputes/mine',
+
+      providesTags: ['Dispute'],
+
+    }),
+
+    getProjectDisputes: builder.query<Dispute[], string>({
+
+      query: (projectId) => `/disputes/project/${projectId}`,
+
+      providesTags: ['Dispute'],
+
+    }),
+
+    resolveDispute: builder.mutation<Dispute, { disputeId: string; resolution: string }>({
+
+      query: ({ disputeId, resolution }) => ({
+
+        url: `/disputes/${disputeId}/resolve`,
+
+        method: 'PUT',
+
+        body: { resolution },
+
+      }),
+
+      invalidatesTags: ['Dispute', 'Project'],
+
+    }),
+
   }),
 
 })
@@ -551,6 +649,16 @@ export const {
   useSubmitMilestoneMutation,
 
   useRunAQAsMutation,
+
+  useApproveSOPMutation,
+
+  useCreateDisputeMutation,
+
+  useGetMyDisputesQuery,
+
+  useGetProjectDisputesQuery,
+
+  useResolveDisputeMutation,
 
 } = projectsApi
 

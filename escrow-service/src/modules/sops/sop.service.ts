@@ -1,7 +1,7 @@
 import db from '../../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger';
-import axios from 'axios';
+import { generateSOP } from '../ai/sop.generator';
 
 export interface SOPGenerationRequest {
   project_id: string;
@@ -14,20 +14,7 @@ export interface SOPGenerationResponse {
   sop_id: string;
 }
 
-export interface AIResponse {
-  request_id: string | null;
-  status: string;
-  output: any;
-  error_message?: string;
-  model_used: string;
-}
-
 export class SOPService {
-  private readonly AI_API_BASE_URL = 'http://127.0.0.1:8000';
-
-  /**
-   * Helper function to convert ISO datetime string to MySQL DATE format (YYYY-MM-DD)
-   */
   private toMySQLDate(dateStr: string): string | null {
     if (!dateStr) return null;
     return new Date(dateStr).toISOString().split('T')[0];
@@ -35,34 +22,29 @@ export class SOPService {
 
   async generateAndStoreSOP(request: SOPGenerationRequest): Promise<SOPGenerationResponse> {
     try {
-      // Step 1: Call AI API
-      const aiResponse = await this.callAIAPI(request);
-      
-      if (aiResponse.status !== 'success' || !aiResponse.output) {
-        throw new Error(`AI API failed: ${aiResponse.error_message || 'Unknown error'}`);
-      }
+      const output = await generateSOP(
+        request.raw_text,
+        request.domain,
+        request.timeline_days,
+        request.project_id
+      );
 
-      const output = aiResponse.output;
-
-      // Step 2: Start database transaction
       const trx = await db.transaction();
 
       try {
-        // Step 3: Insert SOP
         const sopId = uuidv4();
         await this.insertSOP(trx, sopId, request.project_id, output);
 
-        // Step 4: Insert milestones
         if (output.milestones && Array.isArray(output.milestones)) {
-          logger.info('Inserting milestones', { 
+          logger.info('Inserting milestones', {
             total_milestones: output.milestones.length,
-            sop_id: sopId 
+            sop_id: sopId
           });
 
           for (const milestone of output.milestones) {
             const milestoneId = uuidv4();
-            
-            logger.info('Inserting milestone', { 
+
+            logger.info('Inserting milestone', {
               milestone_id: milestoneId,
               milestone_title: milestone.title,
               checks_count: milestone.checks?.length || 0
@@ -70,28 +52,10 @@ export class SOPService {
 
             await this.insertMilestone(trx, milestoneId, sopId, request.project_id, milestone);
 
-            // Step 5: Insert verification checks for this milestone
-            if (!milestone.checks || !Array.isArray(milestone.checks)) {
-              logger.info('Milestone has no checks or invalid checks array', {
-                milestone_id: milestoneId,
-                milestone_title: milestone.title,
-                checks: milestone.checks
-              });
-              continue; // Skip this milestone but continue with others
+            if (!milestone.checks || !Array.isArray(milestone.checks) || milestone.checks.length === 0) {
+              logger.info('Milestone has no checks', { milestone_id: milestoneId, milestone_title: milestone.title });
+              continue;
             }
-
-            if (milestone.checks.length === 0) {
-              logger.info('Milestone has empty checks array', {
-                milestone_id: milestoneId,
-                milestone_title: milestone.title
-              });
-              continue; // Skip this milestone but continue with others
-            }
-
-            logger.info('Inserting verification checks', {
-              milestone_id: milestoneId,
-              checks_to_insert: milestone.checks.length
-            });
 
             for (const check of milestone.checks) {
               await this.insertVerificationCheck(trx, sopId, milestoneId, check);
@@ -103,13 +67,9 @@ export class SOPService {
             });
           }
         } else {
-          logger.info('No milestones found in AI output', {
-            sop_id: sopId,
-            output_milestones: output.milestones
-          });
+          logger.info('No milestones found in SOP output', { sop_id: sopId });
         }
 
-        // Step 6: Commit transaction
         await trx.commit();
 
         logger.info('SOP generated and stored successfully', {
@@ -121,7 +81,6 @@ export class SOPService {
         return { sop_id: sopId };
 
       } catch (error) {
-        // Rollback on any error
         await trx.rollback();
         throw error;
       }
@@ -129,30 +88,6 @@ export class SOPService {
     } catch (error) {
       logger.error('Error generating and storing SOP', error);
       throw new Error(`Failed to generate and store SOP: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  private async callAIAPI(request: SOPGenerationRequest): Promise<AIResponse> {
-    try {
-      const response = await axios.post(
-          `${this.AI_API_BASE_URL}/ai/generate-sop`,
-          request,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            timeout: 600000, // 10 minutes timeout
-          }
-        );
-
-      return response.data;
-
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.error_message || error.message;
-        throw new Error(`AI API call failed: ${errorMessage}`);
-      }
-      throw new Error(`AI API call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -173,7 +108,7 @@ export class SOPService {
   private async insertMilestone(trx: any, milestoneId: string, sopId: string, projectId: string, milestone: any): Promise<void> {
     await trx('milestone_checks').insert({
       milestone_id: milestoneId,
-      sop_id: sopId, // ✅ ADD THIS
+      sop_id: sopId,
       project_id: projectId,
       title: milestone.title || '',
       deadline: this.toMySQLDate(milestone.deadline),
@@ -201,12 +136,31 @@ export class SOPService {
     });
   }
 
+  async approveSOP(sopId: string, role: 'employer' | 'freelancer'): Promise<any> {
+    try {
+      const sop = await db('sops').where({ sop_id: sopId }).first();
+      if (!sop) throw new Error('SOP not found');
+
+      const updateField = role === 'freelancer' ? 'freelancer_approved' : 'client_approved';
+      await db('sops').where({ sop_id: sopId }).update({ [updateField]: true });
+
+      const updatedSop = await db('sops').where({ sop_id: sopId }).first();
+      if (updatedSop.freelancer_approved && updatedSop.client_approved && !updatedSop.locked_at) {
+        await db('sops').where({ sop_id: sopId }).update({ locked_at: new Date() });
+        await db('projects').where({ project_id: sop.project_id }).update({ status: 'active' });
+        logger.info('SOP locked — both parties approved, project set to active', { sop_id: sopId, project_id: sop.project_id });
+      }
+
+      return await db('sops').where({ sop_id: sopId }).first();
+    } catch (error) {
+      logger.error('Error approving SOP', error);
+      throw error;
+    }
+  }
+
   async getSOPById(sopId: string): Promise<any | null> {
     try {
-      const sop = await db('sops')
-        .where({ sop_id: sopId })
-        .first();
-
+      const sop = await db('sops').where({ sop_id: sopId }).first();
       return sop || null;
     } catch (error) {
       logger.error('Error fetching SOP by ID', error);
@@ -216,10 +170,7 @@ export class SOPService {
 
   async getSOPsByProjectId(projectId: string): Promise<any[]> {
     try {
-      const sops = await db('sops')
-        .where({ project_id: projectId })
-        .orderBy('created_at', 'desc');
-
+      const sops = await db('sops').where({ project_id: projectId }).orderBy('created_at', 'desc');
       return sops;
     } catch (error) {
       logger.error('Error fetching SOPs by project ID', error);
@@ -229,10 +180,7 @@ export class SOPService {
 
   async getMilestonesBySOPId(sopId: string): Promise<any[]> {
     try {
-      const milestones = await db('milestone_checks')
-        .where({ project_id: db('sops').select('project_id').where({ sop_id: sopId }).first() })
-        .orderBy('deadline', 'asc');
-
+      const milestones = await db('milestone_checks').where('sop_id', sopId).orderBy('created_at', 'asc');
       return milestones;
     } catch (error) {
       logger.error('Error fetching milestones by SOP ID', error);
@@ -242,34 +190,7 @@ export class SOPService {
 
   async getVerificationChecksByMilestoneId(milestoneId: string): Promise<any[]> {
     try {
-      console.log('DEBUG: Fetching verification checks for milestone_id:', milestoneId);
-      
-      // First, let's see all milestone IDs in the verification_checks table
-      const allMilestoneIds = await db('verification_checks')
-        .select('milestone_id')
-        .distinct();
-      
-      console.log('DEBUG: All milestone IDs in verification_checks:', allMilestoneIds.map(row => row.milestone_id));
-      
-      const checks = await db('verification_checks')
-        .where({ milestone_id: milestoneId });
-      
-      console.log('DEBUG: Raw query result:', checks);
-      console.log('DEBUG: Number of checks found:', checks.length);
-      
-      // Let's also check if the milestone exists and if there are any verification checks at all
-      const milestoneExists = await db('milestone_checks')
-        .where({ milestone_id: milestoneId })
-        .first();
-      
-      console.log('DEBUG: Milestone exists:', !!milestoneExists);
-      
-      const allChecksCount = await db('verification_checks')
-        .count('* as count')
-        .first();
-      
-      console.log('DEBUG: Total verification checks in database:', allChecksCount?.count);
-      
+      const checks = await db('verification_checks').where({ milestone_id: milestoneId });
       return checks;
     } catch (error) {
       logger.error('Error fetching verification checks by milestone ID', error);
@@ -279,10 +200,7 @@ export class SOPService {
 
   async getVerificationCheckById(checkId: string): Promise<any | null> {
     try {
-      const check = await db('verification_checks')
-        .where({ check_id: checkId })
-        .first();
-
+      const check = await db('verification_checks').where({ check_id: checkId }).first();
       return check || null;
     } catch (error) {
       logger.error('Error fetching verification check by ID', error);

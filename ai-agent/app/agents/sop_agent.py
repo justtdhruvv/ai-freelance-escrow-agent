@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from app.schemas.models import ClientBrief, SOP
 from app.prompts.sop_prompt import build_sop_system_prompt, build_sop_user_prompt
-from app.utils.openrouter_client import generate_json_async as generate_json
+from app.utils.gemini_client import generate_json_async as generate_json
 
 def validate_sop_quality(sop_dict: dict, domain: str) -> tuple[bool, str]:
     """

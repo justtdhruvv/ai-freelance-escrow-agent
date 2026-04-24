@@ -1,62 +1,40 @@
 import type { Knex } from 'knex';
+import path from 'path';
+
+const migrationsDir = './src/db/migrations';
+const seedsDir = './src/db/seeds';
+
+// In production, the DB lives on a persistent volume mounted at /app/data
+const productionDbPath = process.env.DB_PATH || '/app/data/db.sqlite';
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    client: 'mysql2',
+    client: 'better-sqlite3',
     connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '3306'),
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'root@123',
-      database: process.env.DB_NAME || 'escrow',
+      filename: './dev.sqlite3',
     },
+    useNullAsDefault: true,
     migrations: {
-      directory: './src/db/migrations',
+      directory: migrationsDir,
       tableName: 'knex_migrations',
     },
     seeds: {
-      directory: './src/db/seeds',
-    },
-  },
-  
-  staging: {
-    client: 'mysql2',
-    connection: {
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '3306'),
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-    },
-    migrations: {
-      directory: './src/db/migrations',
-      tableName: 'knex_migrations',
-    },
-    seeds: {
-      directory: './src/db/seeds',
+      directory: seedsDir,
     },
   },
 
   production: {
-    client: 'mysql2',
+    client: 'better-sqlite3',
     connection: {
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '3306'),
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      ssl: { rejectUnauthorized: false },
+      filename: productionDbPath,
     },
+    useNullAsDefault: true,
     migrations: {
-      directory: './src/db/migrations',
+      directory: migrationsDir,
       tableName: 'knex_migrations',
     },
     seeds: {
-      directory: './src/db/seeds',
-    },
-    pool: {
-      min: 2,
-      max: 10,
+      directory: seedsDir,
     },
   },
 };

@@ -12,6 +12,7 @@ export interface Project {
   status: 'draft' | 'sop_review' | 'client_review' | 'active' | 'completed' | 'disputed' | 'cancelled';
   total_price: number;
   timeline_days?: number;
+  repo_link?: string;
   stripe_payment_intent_id?: string;
   created_at?: Date;
 }
@@ -22,6 +23,7 @@ export interface CreateProjectInput {
   client_id: string;
   total_price: number;
   timeline_days?: number;
+  repo_link?: string;
 }
 
 export interface CreateProjectData {
@@ -32,6 +34,7 @@ export interface CreateProjectData {
   employer_id: string;
   description?: string;
   name?: string;
+  repo_link?: string;
 }
 
 export class ProjectService {

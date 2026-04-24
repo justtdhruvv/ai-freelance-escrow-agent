@@ -144,11 +144,31 @@ export class UserService {
       const user = await db('users')
         .where({ user_id })
         .first();
-      
+
       return user || null;
     } catch (error) {
       logger.error('Error finding user by ID', error);
       throw new Error('Error finding user by ID');
+    }
+  }
+
+  async updateUserProfile(userId: string, data: { github_token?: string; stripe_account_id?: string; razorpay_account_id?: string }): Promise<User> {
+    try {
+      const updateData: Record<string, any> = {};
+      if (data.github_token !== undefined) updateData.github_token = data.github_token;
+      if (data.stripe_account_id !== undefined) updateData.stripe_account_id = data.stripe_account_id;
+      if (data.razorpay_account_id !== undefined) updateData.razorpay_account_id = data.razorpay_account_id;
+
+      if (Object.keys(updateData).length === 0) throw new Error('No fields to update');
+
+      await db('users').where({ user_id: userId }).update(updateData);
+
+      const user = await this.getUserById(userId);
+      if (!user) throw new Error('User not found after update');
+      return user;
+    } catch (error) {
+      logger.error('Error updating user profile', error);
+      throw error;
     }
   }
 }

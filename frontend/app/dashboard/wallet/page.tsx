@@ -23,14 +23,20 @@ export default function EscrowWalletPage() {
   const handleConvertToRealMoney = async (amount: number) => {
     try {
       await convertCredits({ internal_amount: amount }).unwrap();
-      alert(`Conversion initiated! You'll receive $${(amount * 0.98 / 100).toFixed(2)} in 2-3 business days.`);
+      const FEE_PERCENT = 0.02;
+      const amountAfterFee = amount * (1 - FEE_PERCENT);
+      alert(`Conversion initiated! You'll receive ₹${(amountAfterFee / 100).toFixed(2)} in 2-3 business days.`);
     } catch (error: any) {
       alert(`Error: ${error.data?.error || 'Conversion failed'}`);
     }
   };
 
   const formatCurrency = (amount: number) => {
-    return `$${(amount / 100).toFixed(2)}`;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(amount / 100);
   };
 
   const formatDate = (dateString: string) => {
@@ -83,10 +89,10 @@ export default function EscrowWalletPage() {
           <div className="space-y-4">
             <div>
               <div className="text-3xl font-bold text-blue-600">
-                {/* {formatCurrency(walletData.balance)} */}25000
+                {formatCurrency(walletData.balance)}
               </div>
               <div className="text-sm text-gray-500">
-                {walletData.wallet_type.toUpperCase()} Credits
+                {walletData.wallet_type?.toUpperCase() ?? 'INTERNAL'} Credits
               </div>
             </div>
             
@@ -95,14 +101,13 @@ export default function EscrowWalletPage() {
                 <div>
                   <div className="text-sm text-gray-500">Available</div>
                   <div className="font-semibold text-green-600">
-                    {/* {formatCurrency(walletData.available_balance)} */}
-                    25000
+                    {formatCurrency(walletData.available_balance)}
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-500">Pending</div>
                   <div className="font-semibold text-orange-600">
-                    {/* {formatCurrency(walletData.pending_balance)} */}25000
+                    {formatCurrency(walletData.pending_balance)}
                   </div>
                 </div>
               </div>
@@ -121,12 +126,10 @@ export default function EscrowWalletPage() {
           
           <div className="space-y-2">
             <div className="text-2xl font-bold text-green-600">
-              {/* {formatCurrency(walletData.total_earned)} */}
-              25000
+              {formatCurrency(walletData.total_earned ?? 0)}
             </div>
             <div className="text-sm text-gray-500">
-              From 
-              {/* {transactions.length} */}1 transactions
+              From {transactions.length} transactions
             </div>
             <div className="flex items-center text-sm text-gray-600">
               <DollarSign className="h-4 w-4 mr-1" />

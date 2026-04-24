@@ -10,7 +10,9 @@ import SOPModal from './SOPModal'
 import { useMemo, useState } from 'react'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
 import { useGetClientsQuery } from '../store/api/clientsApi'
-import { Project, ProjectsApiResponse } from '../../types/project'
+import { Project } from '../store/api/projectsApi'
+
+type ProjectsApiResponse = Project[] | { projects: Project[] }
 
 export default function ProjectTable({
   searchTerm,

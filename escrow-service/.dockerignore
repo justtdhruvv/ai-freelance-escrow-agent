@@ -1,0 +1,11 @@
+node_modules
+dist
+*.sqlite3
+*.sqlite
+dev.sqlite3
+.env
+.env.local
+coverage
+**/__tests__
+**/*.test.ts
+**/*.spec.ts

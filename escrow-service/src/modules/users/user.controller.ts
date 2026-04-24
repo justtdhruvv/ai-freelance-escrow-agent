@@ -108,6 +108,29 @@ export class UserController {
     }
   };
 
+  updateUserProfile = async (req: Request, res: Response): Promise<void> => {
+    logger.request('PUT', '/users/profile', req.body);
+
+    try {
+      const user = (req as any).user;
+      if (!user) { res.status(401).json({ error: 'User not authenticated' }); return; }
+
+      const { github_token, stripe_account_id, razorpay_account_id } = req.body;
+
+      if (github_token === undefined && stripe_account_id === undefined && razorpay_account_id === undefined) {
+        res.status(400).json({ error: 'At least one field to update is required' });
+        return;
+      }
+
+      const updated = await this.userService.updateUserProfile(user.userId, { github_token, stripe_account_id, razorpay_account_id });
+      const { password_hash, ...profile } = updated;
+      res.status(200).json(profile);
+    } catch (error) {
+      logger.error('Update user profile error', error);
+      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
+
   testEmailConnection = async (req: Request, res: Response): Promise<void> => {
     logger.request('POST', '/users/test-email');
     

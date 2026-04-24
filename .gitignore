@@ -1,0 +1,48 @@
+# Node
+node_modules/
+npm-debug.log*
+.npm
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+
+# SQLite databases
+*.sqlite
+*.sqlite3
+dev.sqlite3
+/app/data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+.nyc_output
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

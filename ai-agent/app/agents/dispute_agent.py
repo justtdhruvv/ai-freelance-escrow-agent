@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from app.schemas.models import Dispute, AQAResult
-from app.utils.openrouter_client import generate_json_async as generate_json
+from app.utils.gemini_client import generate_json_async as generate_json
 from app.prompts.dispute_prompt import build_dispute_system_prompt, build_dispute_user_prompt
 
 async def resolve_dispute(dispute: Dispute, aqa_result: AQAResult) -> Dict[str, Any]:

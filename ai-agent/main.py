@@ -6,7 +6,7 @@ from uuid import uuid4
 import traceback
 
 from app.utils.config import settings
-from app.utils.openrouter_client import validate_openrouter_connection
+from app.utils.gemini_client import validate_gemini_connection
 from app.schemas.models import (
     AIRequest, AIResponse, ClientBrief, SOP, SOPGenerationRequest, ContractGenerationRequest,
     Submission, MilestoneCheck, VerificationContract, PFIEvent,
@@ -55,10 +55,10 @@ async def health_check() -> Dict[str, Any]:
     """
     Health check endpoint that validates OpenRouter connection and API key.
     """
-    openrouter_status = await validate_openrouter_connection()
+    gemini_status = validate_gemini_connection()
     return {
-        "status": "ok" if openrouter_status["connected"] else "error",
-        "openrouter": openrouter_status
+        "status": "ok" if gemini_status["status"] == "success" else "error",
+        "gemini": gemini_status
     }
 
 @app.post("/ai/generate-sop", response_model=AIResponse)
@@ -79,7 +79,7 @@ async def api_generate_sop(request: SOPGenerationRequest):
             request_id=None,
             status="success",
             output=sop,
-            model_used="openai/gpt-oss-120b:free"
+            model_used="gemini-2.5-flash"
         )
     except Exception as e:
         traceback.print_exc()
@@ -103,7 +103,7 @@ async def api_generate_contract(request: ContractGenerationRequest):
             request_id=None,
             status="success",
             output=contract,
-            model_used="openai/gpt-oss-120b:free"
+            model_used="gemini-2.5-flash"
         )
     except Exception as e:
         traceback.print_exc()
@@ -146,7 +146,7 @@ async def api_resolve_dispute(request: AIRequest):
             request_id=request.request_id,
             status="success",
             output=result,
-            model_used="openai/gpt-oss-120b:free"
+            model_used="gemini-2.5-flash"
         )
     except Exception as e:
         traceback.print_exc()
@@ -167,7 +167,7 @@ async def api_update_pfi(request: AIRequest):
             request_id=request.request_id,
             status="success",
             output=events,
-            model_used="openai/gpt-oss-120b:free"
+            model_used="gemini-2.5-flash"
         )
     except Exception as e:
         traceback.print_exc()

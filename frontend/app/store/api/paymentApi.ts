@@ -1,51 +1,33 @@
 import { createApi } from '@reduxjs/toolkit/query/react'
 import { baseApiConfig } from './baseApi'
 
-export interface RazorpayKeyResponse {
-  key_id: string
-  key: string
-  created_at: string
-}
-
-export interface CreateEscrowRequest {
-  projectId: string
+export interface FundProjectResponse {
+  success: boolean
+  message: string
+  payment_event_id: string
   amount: number
-  description?: string
-}
-
-export interface ConfirmPaymentRequest {
-  order_id: string
-  payment_id: string
-  razorpay_signature: string
+  project_id: string
 }
 
 export interface ReleasePaymentRequest {
   milestoneId: string
-  amount?: number
-  description?: string
+  triggered_by?: 'aqa_auto' | 'manual' | 'dispute_resolution'
 }
 
 export interface ProratedReleaseRequest {
   milestoneId: string
   passRate: number
-  description?: string
 }
 
 export interface PaymentTransaction {
   transaction_id: string
-  type: 'escrow_hold' | 'payment_release' | 'conversion' | 'refund'
+  type: 'escrow_hold' | 'milestone_release' | 'prorated_release' | 'refund'
   amount: number
-  description: string
-  status: string
+  description?: string
+  status?: string
   created_at: string
   project_id?: string
   milestone_id?: string
-}
-
-export interface PaymentResponse {
-  success: boolean
-  data: any
-  message?: string
 }
 
 export const paymentApi = createApi({
@@ -53,67 +35,45 @@ export const paymentApi = createApi({
   reducerPath: 'paymentApi',
   tagTypes: ['Payment', 'Transaction', 'Project', 'Milestone'],
   endpoints: (builder) => ({
-    // Get Razorpay key for frontend
-    getRazorpayKey: builder.query<RazorpayKeyResponse, void>({
-      query: () => 'payments/key',
-      providesTags: ['Payment'],
-    }),
-    
-    // Create escrow hold for project
-    createEscrow: builder.mutation<PaymentResponse, CreateEscrowRequest>({
-      query: (data) => ({
-        url: `payments/projects/${data.projectId}/escrow`,
+    // Simulate client funding the project into escrow (no payment gateway)
+    fundProject: builder.mutation<FundProjectResponse, { projectId: string }>({
+      query: ({ projectId }) => ({
+        url: `payments/projects/${projectId}/fund`,
         method: 'POST',
-        body: data,
       }),
       invalidatesTags: ['Payment', 'Transaction', 'Project'],
     }),
-    
-    // Confirm payment after Razorpay success
-    confirmPayment: builder.mutation<PaymentResponse, ConfirmPaymentRequest>({
-      query: (data) => ({
-        url: 'payments/confirm',
+
+    // Release full milestone payment to freelancer
+    releasePayment: builder.mutation<any, ReleasePaymentRequest>({
+      query: ({ milestoneId, triggered_by }) => ({
+        url: `payments/milestones/${milestoneId}/release`,
         method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Payment', 'Transaction', 'Project'],
-    }),
-    
-    // Release full milestone payment
-    releasePayment: builder.mutation<PaymentResponse, ReleasePaymentRequest>({
-      query: (data) => ({
-        url: `milestones/${data.milestoneId}/release`,
-        method: 'POST',
-        body: data,
+        body: { triggered_by: triggered_by || 'manual' },
       }),
       invalidatesTags: ['Payment', 'Transaction', 'Milestone'],
     }),
-    
-    // Release prorated milestone payment (partial)
-    releaseProratedPayment: builder.mutation<PaymentResponse, ProratedReleaseRequest>({
-      query: (data) => ({
-        url: `milestones/${data.milestoneId}/release-prorated`,
+
+    // Release prorated milestone payment (partial AQA pass)
+    releaseProratedPayment: builder.mutation<any, ProratedReleaseRequest>({
+      query: ({ milestoneId, passRate }) => ({
+        url: `payments/milestones/${milestoneId}/release-prorated`,
         method: 'POST',
-        body: data,
+        body: { passRate },
       }),
       invalidatesTags: ['Payment', 'Transaction', 'Milestone'],
     }),
-    
-    // Get payment events for a project
-    getProjectPaymentEvents: builder.query<PaymentTransaction[], { projectId: string; limit?: number; offset?: number }>({
-      query: ({ projectId, limit, offset }) => ({
-        url: `payments/projects/${projectId}/payment-events`,
-        params: { limit, offset },
-      }),
+
+    // Get payment history for a project
+    getProjectPaymentEvents: builder.query<{ payment_events: PaymentTransaction[]; count: number }, string>({
+      query: (projectId) => `payments/projects/${projectId}/payment-events`,
       providesTags: ['Payment', 'Transaction'],
     }),
   }),
 })
 
 export const {
-  useGetRazorpayKeyQuery,
-  useCreateEscrowMutation,
-  useConfirmPaymentMutation,
+  useFundProjectMutation,
   useReleasePaymentMutation,
   useReleaseProratedPaymentMutation,
   useGetProjectPaymentEventsQuery,

@@ -141,6 +141,20 @@ export class SOPController {
     }
   };
 
+  approveSOP = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const sop_id = req.params.sop_id as string;
+      const user = (req as any).user;
+      if (!user) { res.status(401).json({ error: 'Unauthenticated' }); return; }
+
+      const sop = await this.sopService.approveSOP(sop_id, user.role);
+      res.status(200).json(sop);
+    } catch (error) {
+      logger.error('Approve SOP error', error);
+      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
+
   getVerificationCheckById = async (req: Request, res: Response): Promise<void> => {
     try {
       const { check_id } = req.params;

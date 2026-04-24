@@ -26,7 +26,7 @@ export class VerificationContractService {
       await db('verification_contracts')
         .insert({
           verification_contract_id: verification_contract_id,
-          contract_id: 1,
+          contract_id: uuidv4(),
           project_id: contractData.project_id,
           generated_from_sop_version: contractData.generated_from_sop_version || null,
           freelancer_approved: false,

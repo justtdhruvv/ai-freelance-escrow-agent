@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from app.schemas.models import SOP, VerificationContract
 from app.prompts.contract_prompt import build_contract_system_prompt, build_contract_user_prompt
-from app.utils.openrouter_client import generate_json_async as generate_json
+from app.utils.gemini_client import generate_json_async as generate_json
 
 async def generate_contract(sop: SOP, project_context: dict) -> VerificationContract:
     """

@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // 🔥 Get user role
   const userRole = getUserRole() as UserRole
-  const { data: myDisputes } = useGetMyDisputesQuery()
+  const { data: myDisputes } = useGetMyDisputesQuery(undefined, { skip: !user })
   const openDisputeCount = myDisputes?.filter(d => d.status === 'open').length ?? 0
   console.log('🔥 getUserRole() called:', userRole)
   console.log('🔥 localStorage role directly:', typeof window !== 'undefined' ? localStorage.getItem('role') : 'SSR')

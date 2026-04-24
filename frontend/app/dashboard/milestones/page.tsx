@@ -454,18 +454,17 @@ export default function MilestonesPage() {
   const isOverdue = (deadline: string, status: string) => {
     if (status !== 'pending') return false
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return new Date(deadline) < today
+    const todayMs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+    return new Date(deadline).getTime() < todayMs
   }
 
   const isDueSoon = (deadline: string, status: string) => {
     if (status !== 'pending') return false
     const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const deadline2 = new Date(deadline)
-    const twoDays = new Date(today)
-    twoDays.setDate(twoDays.getDate() + 2)
-    return deadline2 >= today && deadline2 <= twoDays
+    const todayMs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+    const twoDaysMs = todayMs + 2 * 24 * 60 * 60 * 1000
+    const deadlineMs = new Date(deadline).getTime()
+    return deadlineMs >= todayMs && deadlineMs <= twoDaysMs
   }
 
 

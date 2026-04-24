@@ -80,6 +80,10 @@ export class DisputeService {
 
       const projectIds = userProjects.map((p: any) => p.project_id);
 
+      if (projectIds.length === 0) {
+        return await db('disputes').where({ raised_by: userId }).orderBy('created_at', 'desc');
+      }
+
       return await db('disputes')
         .where({ raised_by: userId })
         .orWhereIn('project_id', projectIds)

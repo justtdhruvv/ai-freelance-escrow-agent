@@ -44,8 +44,24 @@ export class SubmissionController {
         return;
       }
 
-      if (!type || !['code', 'content', 'design', 'mixed'].includes(type)) {
-        res.status(400).json({ error: 'type is required and must be one of: code, content, design, mixed' });
+      const validTypes = ['code', 'content', 'design', 'mixed', 'documentation', 'other'];
+      if (!type || !validTypes.includes(type)) {
+        res.status(400).json({ error: `type is required and must be one of: ${validTypes.join(', ')}` });
+        return;
+      }
+
+      if (type === 'code' && !repo_url) {
+        res.status(400).json({ error: 'Code submissions require a repository URL' });
+        return;
+      }
+
+      if (type === 'design' && !content) {
+        res.status(400).json({ error: 'Design submissions require an image URL in the content field' });
+        return;
+      }
+
+      if (type === 'documentation' && !content) {
+        res.status(400).json({ error: 'Documentation submissions require content text' });
         return;
       }
 
@@ -90,6 +106,11 @@ export class SubmissionController {
           res.status(409).json({ error: error.message });
           return;
         }
+
+        if (error.message.includes('revisions exhausted')) {
+          res.status(409).json({ error: error.message });
+          return;
+        }
       }
       
       res.status(500).json({ 
@@ -117,22 +138,26 @@ export class SubmissionController {
         return;
       }
 
-      const submission = await this.submissionService.getSubmissionById(submission_id);
+      const submission = await this.submissionService.getSubmissionById(submission_id, user.userId);
 
       if (!submission) {
         res.status(404).json({ error: 'Submission not found' });
         return;
       }
 
-      // TODO: Add authorization check - user can only view their own submissions
-      // For now, return the submission
       res.status(200).json(submission);
 
     } catch (error) {
       logger.error('Get submission error', error);
-      res.status(500).json({ 
-        error: 'Internal server error', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
+
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        res.status(403).json({ error: error.message });
+        return;
+      }
+
+      res.status(500).json({
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   };

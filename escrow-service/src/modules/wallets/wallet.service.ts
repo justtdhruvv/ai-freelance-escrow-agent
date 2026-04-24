@@ -76,7 +76,7 @@ export class WalletService {
     amount: number, 
     description: string,
     milestoneId?: string,
-    type: 'milestone_payment' | 'bonus' | 'refund' = 'milestone_payment'
+    type: 'milestone_payment' | 'bonus' | 'refund' | 'escrow_refund' = 'milestone_payment'
   ): Promise<WalletTransaction> {
     const trx = await db.transaction();
     
@@ -127,12 +127,9 @@ export class WalletService {
       
       // Update milestone status to 'paid' if milestoneId provided
       if (milestoneId) {
-        await trx('milestones')
+        await trx('milestone_checks')
           .where({ milestone_id: milestoneId })
-          .update({ 
-            status: 'paid',
-            updated_at: new Date()
-          });
+          .update({ status: 'paid' });
       }
       
       await trx.commit();

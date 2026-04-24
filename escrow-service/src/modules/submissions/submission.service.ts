@@ -63,7 +63,12 @@ export class SubmissionService {
         await trx.rollback();
         throw new Error('Milestone not found');
       }
-      
+
+      if (milestone.status === 'revision_exhausted') {
+        await trx.rollback();
+        throw new Error('Milestone revisions exhausted: no further submissions allowed');
+      }
+
       const project = await trx('projects')
         .where({ project_id: data.project_id })
         .first();
@@ -132,16 +137,22 @@ export class SubmissionService {
     }
   }
   
-  async getSubmissionById(submissionId: string): Promise<Submission | null> {
+  async getSubmissionById(submissionId: string, requestingUserId?: string): Promise<Submission | null> {
     try {
       const submission = await db('submissions')
         .where({ submission_id: submissionId })
         .first();
-      
-      return submission || null;
+
+      if (!submission) return null;
+
+      if (requestingUserId && submission.user_id !== requestingUserId) {
+        throw new Error('Unauthorized: you do not own this submission');
+      }
+
+      return submission;
     } catch (error) {
       logger.error('Error fetching submission by ID', error);
-      throw new Error('Error fetching submission');
+      throw error;
     }
   }
   

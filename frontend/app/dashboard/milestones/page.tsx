@@ -46,23 +46,13 @@ export default function MilestonesPage() {
 
   const handleSetSelectedProjectId = (projectId: string) => {
 
-    console.log('=== setSelectedProjectId called ===')
-
-    console.log('New projectId:', projectId)
-
     setSelectedProjectId(projectId)
-
-    console.log('selectedProjectId after set:', projectId)
 
   }
 
 
 
   const { data: projects, isLoading: projectsLoading } = useGetProjectsQuery()
-
-
-
-  console.log('Projects data:', projects)
 
 
 
@@ -86,19 +76,9 @@ export default function MilestonesPage() {
 
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
 
-      console.log('Looking for localStorage key:', storageKey)
-
       const storedSubmissionId = localStorage.getItem(storageKey)
 
-      console.log('Raw localStorage value:', storedSubmissionId)
-
-      console.log('Type of stored value:', typeof storedSubmissionId)
-
-
-
       if (storedSubmissionId) {
-
-        console.log('Loaded submission ID from localStorage:', storedSubmissionId)
 
         setMilestoneSubmissions(prev => ({
 
@@ -107,12 +87,6 @@ export default function MilestonesPage() {
           [selectedMilestone.milestone_id]: { submission_id: storedSubmissionId }
 
         }))
-
-      } else {
-
-        console.log('No submission ID found in localStorage for key:', storageKey)
-
-        console.log('Available localStorage keys:', Object.keys(localStorage))
 
       }
 
@@ -131,20 +105,6 @@ export default function MilestonesPage() {
     { skip: !selectedProjectId }
 
   )
-
-
-
-  console.log('Debug info:', {
-
-    selectedProjectId,
-
-    projectSOPs,
-
-    sopsLoading,
-
-    sopsError
-
-  })
 
 
 
@@ -230,49 +190,19 @@ export default function MilestonesPage() {
 
 
 
-      console.log('Milestone submitted successfully:', result)
-
-      console.log('Full response structure:', result)
-
-      console.log('Submission object:', result.submission)
-
-      console.log('Submission ID:', result.submission?.submission_id)
-
-
-
       // Save submission ID to localStorage
 
       const storageKey = `submissionId_${selectedMilestone.milestone_id}`
 
-      console.log('Milestone object:', selectedMilestone)
-
-      console.log('Milestone ID:', selectedMilestone.milestone_id)
-
-      console.log('Storage key:', storageKey)
-
-      
-
       if (result && result.submission && result.submission.submission_id) {
 
         localStorage.setItem(storageKey, result.submission.submission_id)
-
-        console.log("Saved correctly:", storageKey, result.submission.submission_id)
 
       } else {
 
         console.error("submission_id is missing!", result)
 
       }
-
-      // Verify it was saved
-
-      const verifySaved = localStorage.getItem(storageKey)
-
-      console.log('Verification - saved value:', verifySaved)
-
-      console.log('Saved submission ID to localStorage:', result.submission?.submission_id)
-
-
 
       // Track submission
 
@@ -343,10 +273,6 @@ export default function MilestonesPage() {
 
 
 
-      console.log('AQAs completed successfully:', result)
-
-
-
       // Track the AQA result
 
       setAqaResults(prev => ({
@@ -409,22 +335,6 @@ export default function MilestonesPage() {
 
 
 
-  console.log('Milestones API debug:', {
-
-    sopIds,
-
-    firstSopId: sopIds.length > 0 ? sopIds[0] : 'none',
-
-    allMilestones,
-
-    milestonesLoading,
-
-    milestonesError
-
-  })
-
-
-
   // Filter milestones by the selected project ID
 
   const filteredMilestones = allMilestones?.filter(
@@ -432,18 +342,6 @@ export default function MilestonesPage() {
     milestone => milestone.project_id === selectedProjectId
 
   ) || []
-
-
-
-  console.log('Filtered milestones:', {
-
-    selectedProjectId,
-
-    filteredMilestones,
-
-    count: filteredMilestones.length
-
-  })
 
 
 
@@ -488,6 +386,10 @@ export default function MilestonesPage() {
       case 'pending':
 
         return 'bg-yellow-100 text-yellow-800'
+
+      case 'revision_exhausted':
+
+        return 'bg-red-100 text-red-800'
 
       default:
 
@@ -547,6 +449,23 @@ export default function MilestonesPage() {
 
     })
 
+  }
+
+  const isOverdue = (deadline: string, status: string) => {
+    if (status !== 'pending') return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return new Date(deadline) < today
+  }
+
+  const isDueSoon = (deadline: string, status: string) => {
+    if (status !== 'pending') return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const deadline2 = new Date(deadline)
+    const twoDays = new Date(today)
+    twoDays.setDate(twoDays.getDate() + 2)
+    return deadline2 >= today && deadline2 <= twoDays
   }
 
 
@@ -615,7 +534,7 @@ export default function MilestonesPage() {
 
                   <span className="text-gray-900 truncate">
 
-                    {selectedProject ? selectedProject.id : 'Select a project'}
+                    {selectedProject ? (selectedProject.name || selectedProject.project_id) : 'Select a project'}
 
                   </span>
 
@@ -639,17 +558,9 @@ export default function MilestonesPage() {
 
                         <button
 
-                          key={project.id || `project-${index}`}
+                          key={project.project_id || `project-${index}`}
 
                           onClick={() => {
-
-                            console.log('=== PROJECT CLICKED ===')
-
-                            console.log('Project object:', project)
-
-                            console.log('Project ID:', project.project_id)
-
-                            console.log('Project keys:', Object.keys(project))
 
                             handleSetSelectedProjectId(project.project_id)
 
@@ -799,7 +710,7 @@ export default function MilestonesPage() {
 
                 <h2 className="text-lg font-semibold text-gray-900">
 
-                  {selectedProject?.id} - Milestones
+                  {selectedProject?.name || selectedProject?.project_id} - Milestones
 
                 </h2>
 
@@ -891,11 +802,37 @@ export default function MilestonesPage() {
 
                         <td className="px-6 py-4 whitespace-nowrap">
 
-                          <div className="flex items-center text-sm text-gray-900">
+                          <div className="flex items-center gap-2">
 
-                            <Calendar className="w-4 h-4 text-gray-400 mr-2" />
+                            <div className="flex items-center text-sm text-gray-900">
 
-                            {formatDate(milestone.deadline)}
+                              <Calendar className="w-4 h-4 text-gray-400 mr-2" />
+
+                              {formatDate(milestone.deadline)}
+
+                            </div>
+
+                            {isOverdue(milestone.deadline, milestoneStatuses[milestone.milestone_id] || milestone.status) && (
+
+                              <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-red-100 text-red-700 uppercase tracking-wide">
+
+                                OVERDUE
+
+                              </span>
+
+                            )}
+
+                            {!isOverdue(milestone.deadline, milestoneStatuses[milestone.milestone_id] || milestone.status) &&
+
+                              isDueSoon(milestone.deadline, milestoneStatuses[milestone.milestone_id] || milestone.status) && (
+
+                              <span className="px-1.5 py-0.5 text-xs font-bold rounded bg-yellow-100 text-yellow-700 uppercase tracking-wide">
+
+                                DUE SOON
+
+                              </span>
+
+                            )}
 
                           </div>
 
@@ -907,8 +844,7 @@ export default function MilestonesPage() {
 
                             <DollarSign className="w-4 h-4 text-gray-400 mr-2" />
 
-                            {/* {formatCurrency(milestone.payment_amount)} */}
-                            25000
+                            {formatCurrency(milestone.payment_amount)}
 
                           </div>
 
@@ -954,7 +890,11 @@ export default function MilestonesPage() {
 
                               onClick={() => handleOpenSubmissionModal(milestone)}
 
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-[#AD7D56] text-white text-xs font-medium rounded hover:bg-[#8B6344] transition-colors"
+                              disabled={(milestoneStatuses[milestone.milestone_id] || milestone.status) === 'revision_exhausted'}
+
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-[#AD7D56] text-white text-xs font-medium rounded hover:bg-[#8B6344] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+
+                              title={(milestoneStatuses[milestone.milestone_id] || milestone.status) === 'revision_exhausted' ? 'No revisions remaining' : undefined}
 
                             >
 

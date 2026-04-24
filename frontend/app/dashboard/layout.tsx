@@ -17,12 +17,14 @@ import {
   Search,
   Bell,
   ChevronDown,
-  User
+  User,
+  AlertTriangle
 } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../store'
 import { logout, initializeAuth } from '../store/slices/authSlice'
 import { getUserRole } from '../utils/roleGuard'
+import { useGetMyDisputesQuery } from '../store/api/projectsApi'
 
 // Define roles properly
 type UserRole = 'employer' | 'freelancer'
@@ -40,6 +42,7 @@ const menuItems = [
   { icon: TrendingUp, label: 'PFI Score', href: '/dashboard/pfi-score', roles: ['freelancer'] },
   
   // ✅ BOTH
+  { icon: AlertTriangle, label: 'Disputes', href: '/dashboard/disputes' },
   { icon: User, label: 'Profile', href: '/dashboard/profile' },
   { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
 ]
@@ -63,8 +66,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // 🔥 Get user role
   const userRole = getUserRole() as UserRole
+  const { data: myDisputes } = useGetMyDisputesQuery()
+  const openDisputeCount = myDisputes?.filter(d => d.status === 'open').length ?? 0
   console.log('🔥 getUserRole() called:', userRole)
-  console.log('🔥 localStorage role directly:', localStorage.getItem('role'))
+  console.log('🔥 localStorage role directly:', typeof window !== 'undefined' ? localStorage.getItem('role') : 'SSR')
 
   // 🔥 Filter menu based on role
   const filteredMenuItems = menuItems.filter(item => {
@@ -79,7 +84,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   console.log('=== LAYOUT SIDEBAR DEBUG ===')
   console.log('Raw userRole from getUserRole():', getUserRole())
   console.log('Type-cast userRole:', userRole)
-  console.log('localStorage role:', localStorage.getItem('role'))
+  console.log('localStorage role:', typeof window !== 'undefined' ? localStorage.getItem('role') : 'SSR')
   console.log('All menu items:', menuItems.map(item => ({ 
     label: item.label, 
     roles: item.roles || 'ALL',
@@ -194,11 +199,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   className={`${isActive
                     ? 'bg-[#AD7D56] text-white'
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    } w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-all duration-200`}
+                    } w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200`}
                 >
                   <item.icon className="w-5 h-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <>
+                      <span className="text-sm font-medium flex-1 text-left">{item.label}</span>
+                      {item.href === '/dashboard/disputes' && openDisputeCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                          {openDisputeCount > 9 ? '9+' : openDisputeCount}
+                        </span>
+                      )}
+                    </>
                   )}
                 </button>
               )

@@ -21,6 +21,8 @@ export interface VerificationCheck {
   verified_at?: string;
 }
 
+const LOCALHOST_PATTERNS = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+
 async function runHttpEndpoint(check: VerificationCheck, baseUrl: string): Promise<VerificationCheck> {
   const { method = 'GET', endpoint = '', expected_status = 200, expected_field } = check.params;
 
@@ -31,8 +33,7 @@ async function runHttpEndpoint(check: VerificationCheck, baseUrl: string): Promi
     return check;
   }
 
-  const localhostPatterns = ['localhost', '127.0.0.1', '0.0.0.0'];
-  if (localhostPatterns.some(p => baseUrl.includes(p))) {
+  if (LOCALHOST_PATTERNS.some(p => baseUrl.includes(p))) {
     check.result = 'partial';
     check.evidence = 'Server-side AQA cannot reach localhost endpoints. Deploy your server or provide a public URL. Manual verification required.';
     check.verified_by = 'manual';

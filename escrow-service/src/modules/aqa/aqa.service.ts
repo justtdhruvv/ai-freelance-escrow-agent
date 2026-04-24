@@ -183,6 +183,7 @@ export class AQAService {
         const updatedAt = new Date(submission.updated_at).getTime();
         if (new Date().getTime() - updatedAt > staleCutoff) {
           await this.submissionService.updateSubmissionStatus(submission.submission_id, 'submitted');
+          return { canRun: true };
         } else {
           return { canRun: false, reason: 'AQA already running for this submission' };
         }

@@ -5,7 +5,7 @@ import { logger } from '../../utils/logger';
 export interface CreateSubmissionInput {
   project_id: string;
   milestone_id: string;
-  type: 'code' | 'content' | 'design' | 'mixed';
+  type: 'code' | 'content' | 'design' | 'mixed' | 'documentation' | 'other';
   content?: string;
   repo_url?: string;
   repo_branch?: string;

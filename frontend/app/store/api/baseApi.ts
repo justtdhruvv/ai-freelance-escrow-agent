@@ -11,7 +11,7 @@ import type { RootState } from '../index'
  * Enhanced base query with secure token handling
  */
 export const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000',
   prepareHeaders: (headers, { getState, type, endpoint }) => {
     // Get auth headers using TokenManager
     const authHeaders = TokenManager.getAuthHeader()
@@ -33,8 +33,8 @@ export const baseQuery = fetchBaseQuery({
     console.log(`=== API Call Debug ===`)
     console.log(`Endpoint: ${endpoint}`)
     console.log(`Type: ${type}`)
-    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/`)
-    console.log(`Full URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/${endpoint}`)
+    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000'}/`)
+    console.log(`Full URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000'}/${endpoint}`)
     console.log(`Has Auth Header: ${headers.has('authorization')}`)
     console.log(`Auth Header: ${headers.get('authorization')?.substring(0, 30) || 'None'}...`)
     console.log(`Accept Header: ${headers.get('accept')}`)
@@ -47,9 +47,13 @@ export const baseQuery = fetchBaseQuery({
 /**
  * Enhanced base query with error handling and token refresh
  */
+const PUBLIC_ENDPOINTS = ['auth/login', 'auth/signup', 'auth/register']
+
 export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) => {
-  // Check if we have a valid token before making the request
-  if (!TokenManager.hasValidToken()) {
+  const url = typeof args === 'string' ? args : args?.url ?? ''
+  const isPublic = PUBLIC_ENDPOINTS.some(e => url.includes(e))
+
+  if (!isPublic && !TokenManager.hasValidToken()) {
     console.error('API Error: No valid token available')
     return {
       error: {

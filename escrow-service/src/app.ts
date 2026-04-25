@@ -18,12 +18,17 @@ import disputeRouter from './modules/disputes/dispute.routes';
 const app = express();
 
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN ? 
+  origin: process.env.CORS_ORIGIN ?
     process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [
       'http://localhost:3000',
       'http://localhost:3001',
+      'http://localhost:5001',
       'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001'
+      'http://127.0.0.1:3001',
+      'http://100.80.147.48:3001',
+      'http://100.80.147.48:5001',
+      'http://o0ossc0wc8g8gsgws44gskok.100.80.147.48.sslip.io',
+      'https://o0ossc0wc8g8gsgws44gskok.100.80.147.48.sslip.io',
     ],
   credentials: true,
 };

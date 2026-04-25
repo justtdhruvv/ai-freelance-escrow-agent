@@ -1,8 +1,8 @@
 import type { Knex } from 'knex';
 import path from 'path';
 
-const migrationsDir = './src/db/migrations';
-const seedsDir = './src/db/seeds';
+const migrationsDir = path.join(__dirname, 'src/db/migrations');
+const seedsDir = path.join(__dirname, 'src/db/seeds');
 
 // In production, the DB lives on a persistent volume mounted at /app/data
 const productionDbPath = process.env.DB_PATH || '/app/data/db.sqlite';

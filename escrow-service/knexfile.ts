@@ -17,6 +17,7 @@ const config: { [key: string]: Knex.Config } = {
     migrations: {
       directory: migrationsDir,
       tableName: 'knex_migrations',
+      loadExtensions: ['.js'],
     },
     seeds: {
       directory: seedsDir,
@@ -32,6 +33,7 @@ const config: { [key: string]: Knex.Config } = {
     migrations: {
       directory: migrationsDir,
       tableName: 'knex_migrations',
+      loadExtensions: ['.js'],
     },
     seeds: {
       directory: seedsDir,

@@ -57,8 +57,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const dispatch = useDispatch<AppDispatch>()
-  const { user } = useSelector((state: RootState) => state.auth)
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth)
 
+  const [authChecked, setAuthChecked] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -97,7 +98,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     dispatch(initializeAuth())
+    setAuthChecked(true)
   }, [dispatch])
+
+  useEffect(() => {
+    if (authChecked && !isAuthenticated) {
+      router.push('/login')
+    }
+  }, [authChecked, isAuthenticated, router])
 
   useEffect(() => {
     const handleResize = () => {
@@ -148,6 +156,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const handleLogout = () => {
     dispatch(logout())
     router.push('/login')
+  }
+
+  if (!authChecked || !isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#F5F1EC]">
+        <div className="w-8 h-8 border-2 border-[#AD7D56] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (

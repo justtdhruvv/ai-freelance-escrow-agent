@@ -11,7 +11,7 @@ import type { RootState } from '../index'
  * Enhanced base query with secure token handling
  */
 export const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000',
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
   prepareHeaders: (headers, { getState, type, endpoint }) => {
     // Get auth headers using TokenManager
     const authHeaders = TokenManager.getAuthHeader()
@@ -33,8 +33,8 @@ export const baseQuery = fetchBaseQuery({
     console.log(`=== API Call Debug ===`)
     console.log(`Endpoint: ${endpoint}`)
     console.log(`Type: ${type}`)
-    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000'}/`)
-    console.log(`Full URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://100.80.147.48:5000'}/${endpoint}`)
+    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io'}/`)
+    console.log(`Full URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io'}/${endpoint}`)
     console.log(`Has Auth Header: ${headers.has('authorization')}`)
     console.log(`Auth Header: ${headers.get('authorization')?.substring(0, 30) || 'None'}...`)
     console.log(`Accept Header: ${headers.get('accept')}`)

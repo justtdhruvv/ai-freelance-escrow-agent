@@ -31,6 +31,8 @@ const corsOptions = {
       'https://o0ossc0wc8g8gsgws44gskok.100.80.147.48.sslip.io',
       'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
       'https://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
+      'https://escrow.dhruvautomates.in',
+      'http://escrow.dhruvautomates.in',
     ],
   credentials: true,
 };

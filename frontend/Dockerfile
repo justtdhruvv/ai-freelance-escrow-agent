@@ -20,6 +20,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3001
+ENV HOSTNAME=0.0.0.0
 
 # Copy the standalone output produced by next build with output: 'standalone'
 COPY --from=builder /app/.next/standalone ./

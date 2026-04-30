@@ -37,22 +37,32 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # Baked at build time — must be the public URL users hit in browser.
-        # With rewrites, API calls are same-origin so this is just the site URL.
         NEXT_PUBLIC_API_URL: ${FRONTEND_URL:-http://localhost:3001}
     container_name: escrow-frontend
     restart: unless-stopped
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     environment:
       NODE_ENV: production
       PORT: 3001
-      # Runtime — Next.js uses this in rewrites() to reach Express internally
       BACKEND_URL: http://backend:3000
     depends_on:
       backend:
         condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.escrow-frontend.rule=Host(`escrow.dhruvautomates.in`)
+      - traefik.http.routers.escrow-frontend.entrypoints=https
+      - traefik.http.routers.escrow-frontend.tls=true
+      - traefik.http.services.escrow-frontend.loadbalancer.server.port=3001
+    networks:
+      - default
+      - coolify
 
 volumes:
   escrow_data:
     driver: local
+
+networks:
+  coolify:
+    external: true

@@ -11,7 +11,7 @@ import type { RootState } from '../index'
  * Enhanced base query with secure token handling
  */
 export const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
+  baseUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001',
   prepareHeaders: (headers, { getState, type, endpoint }) => {
     // Get auth headers using TokenManager
     const authHeaders = TokenManager.getAuthHeader()
@@ -29,17 +29,6 @@ export const baseQuery = fetchBaseQuery({
     // Accept JSON responses
     headers.set('Accept', 'application/json')
 
-    // Debug logging for API calls
-    console.log(`=== API Call Debug ===`)
-    console.log(`Endpoint: ${endpoint}`)
-    console.log(`Type: ${type}`)
-    console.log(`Base URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io'}/`)
-    console.log(`Full URL: ${process.env.NEXT_PUBLIC_API_URL || 'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io'}/${endpoint}`)
-    console.log(`Has Auth Header: ${headers.has('authorization')}`)
-    console.log(`Auth Header: ${headers.get('authorization')?.substring(0, 30) || 'None'}...`)
-    console.log(`Accept Header: ${headers.get('accept')}`)
-    console.log(`=====================`)
-    
     return headers
   },
 })
@@ -54,7 +43,6 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
   const isPublic = PUBLIC_ENDPOINTS.some(e => url.includes(e))
 
   if (!isPublic && !TokenManager.hasValidToken()) {
-    console.error('API Error: No valid token available')
     return {
       error: {
         status: 401,
@@ -64,59 +52,23 @@ export const baseQueryWithAuth = async (args: any, api: any, extraOptions: any) 
       }
     }
   }
-  
-  // Make the API call
+
   const result = await baseQuery(args, api, extraOptions)
-  
-  // Enhanced response validation
+
   if (result.data) {
-    console.log('=== API Response Debug ===')
-    console.log('Response Type:', typeof result.data)
-    console.log('Is Array:', Array.isArray(result.data))
-    console.log('Has Clients Property:', result.data && typeof result.data === 'object' && 'clients' in result.data)
-    
-    // Check if response is HTML (indicates wrong endpoint)
     if (typeof result.data === 'string' && result.data.includes('<!DOCTYPE html>')) {
-      console.error('API Error: Received HTML response - wrong endpoint called!')
-      console.error('Response preview:', result.data.substring(0, 200) + '...')
+      console.error('API Error: Received HTML response - check backend URL configuration')
       return {
         error: {
           status: 500,
           data: {
-            message: 'API endpoint returned HTML instead of JSON. Check if backend server is running on correct port.'
+            message: 'API endpoint returned HTML instead of JSON.'
           }
         }
       }
     }
-    
-    console.log('Response Data:', result.data)
-    console.log('========================')
   }
-  
-  // Handle 401 errors
-  if (result.error && result.error.status === 401) {
-    console.error('API Error: 401 Unauthorized - Token may be expired or invalid')
-    
-    // Log detailed error information
-    console.log('401 Error Details:', {
-      endpoint: typeof args === 'string' ? args : args.url,
-      hasToken: TokenManager.hasValidToken(),
-      tokenPreview: TokenManager.getToken()?.substring(0, 20) + '...',
-    })
-    
-    // Optionally clear invalid token
-    // TokenManager.removeToken()
-  }
-  
-  // Handle other HTTP errors
-  if (result.error && typeof result.error.status === 'number' && result.error.status >= 400) {
-    console.warn('API Error:', {
-      status: result.error.status,
-      data: result.error.data,
-      endpoint: typeof args === 'string' ? args : args.url
-    })
-  }
-  
+
   return result
 }
 

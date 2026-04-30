@@ -3,6 +3,8 @@ import db from '../../config/database';
 import { WalletService, FreelancerWallet, WalletTransaction, WalletConversion } from './wallet.service';
 import { logger } from '../../utils/logger';
 
+const CONVERSION_ESTIMATED_ARRIVAL = '2-3 business days';
+
 export class WalletController {
   private walletService: WalletService;
 
@@ -152,7 +154,7 @@ export class WalletController {
           conversion_rate: conversion.conversion_rate,
           fees: conversion.fees,
           status: conversion.status,
-          estimated_arrival: '2-3 business days'
+          estimated_arrival: CONVERSION_ESTIMATED_ARRIVAL
         }
       };
       

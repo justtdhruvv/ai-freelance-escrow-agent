@@ -5,7 +5,8 @@
       "Bash(git -C \"D:\\\\khyber\\\\ai-freelance-escrow-agent\" add escrow-service/src/modules/wallets/wallet.service.ts escrow-service/src/modules/submissions/submission.service.ts escrow-service/src/modules/submissions/submission.controller.ts)",
       "Bash(git -C \"D:\\\\khyber\\\\ai-freelance-escrow-agent\" status --short)",
       "Bash(git -C 'D:\\\\khyber\\\\ai-freelance-escrow-agent' commit -m ' *)",
-      "Bash(git -C \"D:\\\\khyber\\\\ai-freelance-escrow-agent\" add escrow-service/src/modules/aqa/aqa.service.ts)"
+      "Bash(git -C \"D:\\\\khyber\\\\ai-freelance-escrow-agent\" add escrow-service/src/modules/aqa/aqa.service.ts)",
+      "Bash(npm test *)"
     ]
   }
 }

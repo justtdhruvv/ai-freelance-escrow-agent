@@ -36,7 +36,7 @@ export class PaymentController {
         return;
       }
 
-      const paymentEvent = await this.paymentService.simulateFundProject(projectId);
+      const paymentEvent = await this.paymentService.fundProject(projectId);
 
       res.status(200).json({
         success: true,

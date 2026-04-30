@@ -14,6 +14,9 @@ router.post('/', projectController.createProject);
 // GET /projects - Get all projects for the logged-in user (freelancer or employer)
 router.get('/', projectController.getProjects);
 
+// GET /projects/:id/milestones - Get all milestones for a project
+router.get('/:id/milestones', projectController.getProjectMilestones);
+
 // GET /projects/:id - Get a specific project by ID (freelancer or employer owned)
 router.get('/:id', projectController.getProjectById);
 

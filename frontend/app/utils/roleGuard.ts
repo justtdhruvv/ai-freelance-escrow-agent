@@ -7,12 +7,29 @@ export interface UserPermissions {
   canAccessDashboard: boolean
 }
 
-// ✅ Get role safely from localStorage
+// ✅ Get role — localStorage first, JWT decode as fallback
 export const getUserRole = (): UserRole => {
   if (typeof window === 'undefined') return 'freelancer'
 
   const role = localStorage.getItem('role')
-  return (role as UserRole) || 'freelancer'
+  if (role === 'employer' || role === 'freelancer' || role === 'admin') {
+    return role as UserRole
+  }
+
+  // localStorage missing or invalid — decode JWT directly as authoritative source
+  const token = localStorage.getItem('authToken')
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      if (payload.role === 'employer' || payload.role === 'freelancer') {
+        return payload.role as UserRole
+      }
+    } catch {
+      // malformed token — fall through to default
+    }
+  }
+
+  return 'freelancer'
 }
 
 // ✅ Permissions based on role
@@ -44,7 +61,7 @@ export function canAccessRoute(route: string, role?: UserRole): boolean {
   const userRole = role || getUserRole()
 
   const restrictedRoutes: Record<UserRole, string[]> = {
-    employer: ['/dashboard/clients', '/dashboard/wallet', '/dashboard/pfi-score'],
+    employer: ['/dashboard/clients', '/dashboard/wallet', '/dashboard/pfi-score', '/dashboard/milestones', '/dashboard/ai-reviews'],
     freelancer: [],
     admin: []
   }

@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('title').notNullable();
     table.date('deadline').notNullable();
     table.integer('payment_amount').notNullable();
-    table.enum('status', ['pending', 'in_progress', 'passed', 'failed', 'paid']).defaultTo('pending');
+    table.enum('status', ['pending', 'in_progress', 'submitted', 'aqa_running', 'aqa_completed', 'aqa_failed', 'passed', 'partial', 'failed', 'paid', 'revision_exhausted']).defaultTo('pending');
     table.integer('revisions_used').defaultTo(0);
     table.integer('max_revisions').defaultTo(2);
     table.timestamp('created_at').defaultTo(knex.fn.now());

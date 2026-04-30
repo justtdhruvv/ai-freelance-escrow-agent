@@ -39,6 +39,19 @@ const config: { [key: string]: Knex.Config } = {
       directory: seedsDir,
     },
   },
+
+  test: {
+    client: 'better-sqlite3',
+    connection: {
+      filename: './test.sqlite3',
+    },
+    useNullAsDefault: true,
+    migrations: {
+      directory: migrationsDir,
+      tableName: 'knex_migrations',
+      loadExtensions: ['.js'],
+    },
+  },
 };
 
 export default config;

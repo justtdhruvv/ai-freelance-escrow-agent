@@ -30,6 +30,15 @@ export interface PaymentTransaction {
   milestone_id?: string
 }
 
+export interface StripeCheckoutResponse {
+  url: string
+}
+
+export interface StripeVerifyResponse {
+  success: boolean
+  payment_event: any
+}
+
 export const paymentApi = createApi({
   ...baseApiConfig,
   reducerPath: 'paymentApi',
@@ -40,6 +49,25 @@ export const paymentApi = createApi({
       query: ({ projectId }) => ({
         url: `payments/projects/${projectId}/fund`,
         method: 'POST',
+      }),
+      invalidatesTags: ['Payment', 'Transaction', 'Project'],
+    }),
+
+    // Create a Stripe Checkout session — returns hosted payment URL
+    createStripeCheckoutSession: builder.mutation<StripeCheckoutResponse, { projectId: string }>({
+      query: ({ projectId }) => ({
+        url: 'payments/stripe/create-checkout-session',
+        method: 'POST',
+        body: { projectId },
+      }),
+    }),
+
+    // Verify Stripe payment on return and credit project escrow
+    verifyStripeSession: builder.mutation<StripeVerifyResponse, { sessionId: string; projectId: string }>({
+      query: ({ sessionId, projectId }) => ({
+        url: 'payments/stripe/verify-session',
+        method: 'POST',
+        body: { sessionId, projectId },
       }),
       invalidatesTags: ['Payment', 'Transaction', 'Project'],
     }),
@@ -74,6 +102,8 @@ export const paymentApi = createApi({
 
 export const {
   useFundProjectMutation,
+  useCreateStripeCheckoutSessionMutation,
+  useVerifyStripeSessionMutation,
   useReleasePaymentMutation,
   useReleaseProratedPaymentMutation,
   useGetProjectPaymentEventsQuery,

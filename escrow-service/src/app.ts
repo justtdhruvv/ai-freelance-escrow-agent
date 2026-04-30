@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { healthRouter } from './routes/health';
 import { authRouter } from './modules/auth/auth.routes';
 import { projectRouter } from './modules/projects/project.routes';
@@ -17,32 +19,41 @@ import disputeRouter from './modules/disputes/dispute.routes';
 
 const app = express();
 
+// Security: helmet sets secure HTTP headers
+app.use(helmet());
+
+// Backend is proxied through Next.js — browser never talks to Express directly in production.
+// CORS_ORIGIN only matters for local dev testing against Express directly.
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN ?
-    process.env.CORS_ORIGIN.split(',').map(origin => origin.trim()) : [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:5001',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'http://100.80.147.48:3001',
-      'http://100.80.147.48:5001',
-      'http://o0ossc0wc8g8gsgws44gskok.100.80.147.48.sslip.io',
-      'https://o0ossc0wc8g8gsgws44gskok.100.80.147.48.sslip.io',
-      'http://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
-      'https://jk4kkc40kssooo0gsog4wgs0.100.80.147.48.sslip.io',
-      'https://escrow.dhruvautomates.in',
-      'http://escrow.dhruvautomates.in',
-    ],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+    : ['http://localhost:3001', 'http://localhost:3000'],
   credentials: true,
 };
+
+// Rate limiting: 100 requests per 15 minutes globally
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Stricter rate limiting for auth endpoints: 10 requests per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many login attempts, please try again later.' },
+});
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(limiter);
 
 app.use('/health', healthRouter);
-app.use('/auth', authRouter);
+app.use('/auth', authLimiter, authRouter);
 app.use('/projects', projectRouter);
 app.use('/projects', clientBriefRouter);
 app.use('/projects', verificationContractRouter);

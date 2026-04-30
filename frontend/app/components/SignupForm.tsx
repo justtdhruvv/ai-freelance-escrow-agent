@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2, Check, X } from 'lucide-react'
 import { authService } from '../services/authService'
+import { useDispatch } from 'react-redux'
+import { useRouter } from 'next/navigation'
+import { loginSuccess } from '../store/slices/authSlice'
 
 interface FormData {
   name: string
@@ -28,6 +31,7 @@ interface PasswordStrength {
 }
 
 export default function SignupForm() {
+  const [role, setRole] = useState<'freelancer' | 'employer'>('freelancer')
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -44,6 +48,9 @@ export default function SignupForm() {
     color: 'bg-gray-300',
     text: 'Enter a password'
   })
+
+  const dispatch = useDispatch()
+  const router = useRouter()
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -110,6 +117,10 @@ export default function SignupForm() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
 
+    if (!formData.name.trim()) {
+      newErrors.name = 'Full name is required'
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required'
     } else if (!validateEmail(formData.email)) {
@@ -160,11 +171,20 @@ export default function SignupForm() {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: 'freelancer' // Default role
+        role
       })
 
-      // Show success message and redirect to dashboard
-      window.location.href = '/dashboard?message=Account created successfully! Welcome!'
+      dispatch(loginSuccess({
+        user: {
+          id: response.user.user_id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role,
+        },
+        token: response.token,
+      }))
+
+      router.push('/dashboard?message=Account created successfully! Welcome!')
     } catch (error) {
       setErrors({
         general: error instanceof Error ? error.message : 'Sign up failed. Please try again.'
@@ -184,8 +204,66 @@ export default function SignupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Role Toggle */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          I am a...
+        </label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => setRole('freelancer')}
+            className={`flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm transition-all duration-200 ${
+              role === 'freelancer'
+                ? 'border-[#AD7D56] bg-[#AD7D56] text-white'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-[#AD7D56]'
+            }`}
+          >
+            Freelancer
+          </button>
+          <button
+            type="button"
+            onClick={() => setRole('employer')}
+            className={`flex-1 py-2.5 px-4 rounded-lg border-2 font-medium text-sm transition-all duration-200 ${
+              role === 'employer'
+                ? 'border-[#AD7D56] bg-[#AD7D56] text-white'
+                : 'border-gray-300 bg-white text-gray-700 hover:border-[#AD7D56]'
+            }`}
+          >
+            Client
+          </button>
+        </div>
+      </div>
+
       {/* Name Field */}
-      
+      <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+          Full Name
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:outline-none transition-colors ${
+            errors.name
+              ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 focus:border-[#AD7D56] focus:ring-[#AD7D56]'
+          }`}
+          placeholder="Enter your full name"
+          disabled={isLoading}
+        />
+        {errors.name && (
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-red-500 text-sm mt-1"
+          >
+            {errors.name}
+          </motion.p>
+        )}
+      </div>
 
       {/* Email Field */}
       <div>

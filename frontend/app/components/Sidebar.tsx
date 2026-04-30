@@ -14,7 +14,6 @@ import {
   X
 } from 'lucide-react'
 import { getUserRole } from '../utils/roleGuard'
-import { useEffect } from 'react'
 
 // Define roles properly
 type UserRole = 'employer' | 'freelancer'
@@ -23,8 +22,8 @@ type UserRole = 'employer' | 'freelancer'
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: FolderOpen, label: 'Projects', href: '/dashboard/projects' },
-  { icon: Target, label: 'Milestones', href: '/dashboard/milestones' },
-  { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews' },
+  { icon: Target, label: 'Milestones', href: '/dashboard/milestones', roles: ['freelancer'] },
+  { icon: Brain, label: 'AI Reviews', href: '/dashboard/ai-reviews', roles: ['freelancer'] },
 
   // ❌ ONLY freelancer
   { icon: Users, label: 'Clients', href: '/dashboard/clients', roles: ['freelancer'] },
@@ -48,15 +47,10 @@ export default function Sidebar({
   isMobile,
   onClose
 }: SidebarProps) {
-  console.log('🔥 SIDEBAR COMPONENT RENDERING!')
-  
   const router = useRouter()
   const pathname = usePathname()
 
   const userRole = getUserRole() as UserRole
-  
-  console.log('🔥 getUserRole() called:', userRole)
-  console.log('🔥 localStorage role directly:', localStorage.getItem('role'))
 
   const handleMenuClick = (href: string) => {
     router.push(href)
@@ -73,19 +67,6 @@ export default function Sidebar({
     // check if current role allowed
     return item.roles.includes(userRole)
   })
-
-  // 🔍 DEBUG: Log everything
-  console.log('=== SIDEBAR DEBUG ===')
-  console.log('Raw userRole from getUserRole():', getUserRole())
-  console.log('Type-cast userRole:', userRole)
-  console.log('localStorage role:', localStorage.getItem('role'))
-  console.log('All menu items:', menuItems.map(item => ({ 
-    label: item.label, 
-    roles: item.roles || 'ALL',
-    hasRoles: !!item.roles 
-  })))
-  console.log('Filtered menu items:', filteredMenuItems.map(item => item.label))
-  console.log('=== END SIDEBAR DEBUG ===')
 
   return (
     <div

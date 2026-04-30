@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
 export interface LoginData {
   email: string
@@ -50,7 +50,7 @@ class AuthService {
       // Store complete user object including role
       if (result.user) {
         localStorage.setItem("user", JSON.stringify(result.user))
-        localStorage.setItem("role", result.user.role || "user")
+        localStorage.setItem("role", result.user.role || "freelancer")
       }
       
       if (result.user?.user_id) {
@@ -99,7 +99,7 @@ class AuthService {
       // Store complete user object including role
       if (result.user) {
         localStorage.setItem("user", JSON.stringify(result.user))
-        localStorage.setItem("role", result.user.role || "user")
+        localStorage.setItem("role", result.user.role || "freelancer")
       }
       
       if (result.user?.user_id) {

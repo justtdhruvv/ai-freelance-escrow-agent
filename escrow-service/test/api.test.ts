@@ -1,5 +1,5 @@
 import request from 'supertest';
-import app from '../dist/src/server';
+import app from '../src/app';
 
 describe('Backend API End-to-End Tests', () => {
   let authToken: string;

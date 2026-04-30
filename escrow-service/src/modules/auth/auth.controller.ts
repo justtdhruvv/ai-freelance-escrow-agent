@@ -14,7 +14,7 @@ export class AuthController {
     logger.request('POST', '/auth/signup', req.body);
     
     try {
-      const { email, password, role }: CreateUserInput = req.body;
+      const { name, email, password, role }: CreateUserInput = req.body;
 
       if (!email || !password || !role) {
         const errorResponse = { error: 'Missing required fields: email, password, role' };
@@ -35,6 +35,7 @@ export class AuthController {
       }
 
       const user = await this.authService.createUser({
+        name: name || '',
         email,
         password,
         role

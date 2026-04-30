@@ -210,11 +210,27 @@ export class ProjectService {
       const project = await db('projects')
         .where({ project_id, freelancer_id })
         .first();
-      
+
       return project || null;
     } catch (error) {
       logger.error('Error fetching project by ID and freelancer', error);
       throw new Error('Error fetching project');
+    }
+  }
+
+  async getMilestonesByProjectId(project_id: string, userId: string, role: string): Promise<any[] | null> {
+    try {
+      const project = await db('projects').where({ project_id }).first();
+      if (!project) return [];
+      if (role === 'freelancer' && project.freelancer_id !== userId) return null;
+      if (role === 'employer' && project.employer_id !== userId) return null;
+
+      return await db('milestone_checks')
+        .where({ project_id })
+        .orderBy('created_at', 'asc');
+    } catch (error) {
+      logger.error('Error fetching milestones by project ID', error);
+      throw new Error('Error fetching milestones');
     }
   }
 }

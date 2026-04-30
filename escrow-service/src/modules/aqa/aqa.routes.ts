@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AQAController } from './aqa.controller';
-import { authenticateToken } from '../../middlewares/auth.middleware';
+import { authenticateToken, requireRole } from '../../middlewares/auth.middleware';
 
 const router = Router();
 const aqaController = new AQAController();
@@ -9,12 +9,12 @@ const aqaController = new AQAController();
 router.use(authenticateToken);
 
 // POST /submissions/:submission_id/run-aqa - Run AQA on submission
-router.post('/submissions/:submission_id/run-aqa', aqaController.runAQA);
+router.post('/submissions/:submission_id/run-aqa', requireRole('freelancer'), aqaController.runAQA);
 
 // GET /submissions/:submission_id/aqa-result - Get AQA result for submission
 router.get('/submissions/:submission_id/aqa-result', aqaController.getAQAResult);
 
 // POST /submissions/:submission_id/retry-aqa - Retry AQA on submission
-router.post('/submissions/:submission_id/retry-aqa', aqaController.retryAQA);
+router.post('/submissions/:submission_id/retry-aqa', requireRole('freelancer'), aqaController.retryAQA);
 
 export default router;

@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useRouter } from "next/navigation"
+import { useDispatch } from 'react-redux'
 import { authService } from '../services/authService'
+import { loginSuccess } from '../store/slices/authSlice'
 
 interface FormData {
   email: string
@@ -19,6 +21,7 @@ interface FormErrors {
 }
 
 export default function LoginForm() {
+  const dispatch = useDispatch()
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -95,6 +98,17 @@ export default function LoginForm() {
       if (formData.rememberMe) {
         localStorage.setItem("rememberMe", "true")
       }
+
+      // Sync Redux immediately so role-dependent UI renders correctly without page reload
+      dispatch(loginSuccess({
+        user: {
+          id: response.user.user_id,
+          name: response.user.name,
+          email: response.user.email,
+          role: response.user.role,
+        },
+        token: response.token,
+      }))
 
       router.replace("/dashboard")
 

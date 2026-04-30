@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.enum('verdict', ['passed', 'partial', 'failed', 'error']).notNullable();
     table.decimal('pass_rate', 5, 4).notNullable();
     table.enum('payment_trigger', ['full', 'prorated', 'none', 'error']).notNullable();
-    table.enum('payment_status', ['pending', 'processed']).defaultTo('pending');
+    table.enum('payment_status', ['pending', 'processed', 'none', 'error']).defaultTo('none');
     table.json('audit_report').nullable();
     table.json('all_checks').nullable();
     table.integer('milestone_amount').notNullable();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Bell, TrendingUp, Briefcase, DollarSign, Target, CheckCircle, User, MoreVertical, Eye, Plus } from 'lucide-react'
+import { TrendingUp, Briefcase, DollarSign, Target, CheckCircle, Clock, Eye, Plus } from 'lucide-react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '../store'
 import { useGetProjectsQuery } from '../store/api/projectsApi'
@@ -14,9 +14,8 @@ import CreateProjectModal from '../components/CreateProjectModal'
 
 export default function DashboardPage() {
   const dispatch = useDispatch<AppDispatch>()
-    const router = useRouter()
+  const router = useRouter()
   const { user } = useSelector((state: RootState) => state.auth)
-  const [searchQuery, setSearchQuery] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createFormData, setCreateFormData] = useState({
     total_price: 0,
@@ -24,9 +23,8 @@ export default function DashboardPage() {
     client_id: ''
   })
 
-  // Fetch projects using RTK Query
   const { data: projectsData, isLoading, error } = useGetProjectsQuery()
-  const [createProject, { isLoading: isCreating }] = useCreateProjectMutation()
+  const [createProject] = useCreateProjectMutation()
   const { data: clientsData } = useGetClientsQuery()
   const clients = clientsData?.clients || []
 
@@ -38,45 +36,11 @@ export default function DashboardPage() {
 
   const clientMap = useMemo(() => {
     const map: Record<string, string> = {}
-
     clients.forEach((c: any) => {
       map[c.user_id] = c.email
     })
-
     return map
   }, [clients])
-
-  // Dummy stats data based on new structure
-  const stats = [
-    {
-      title: 'Total Projects',
-      value: projectsData?.length || '0',
-      growth: '+12%',
-      icon: Briefcase,
-      color: 'text-blue-600'
-    },
-    {
-      title: 'Active Projects',
-      value: projectsData?.filter(p => p.status === 'active').length || '0',
-      growth: '+5%',
-      icon: Target,
-      color: 'text-green-600'
-    },
-    {
-      title: 'Total Escrow',
-      value: `$${projectsData?.reduce((sum, p) => sum + p.total_price, 0).toLocaleString() || '0'}`,
-      growth: '+18%',
-      icon: DollarSign,
-      color: 'text-purple-600'
-    },
-    {
-      title: 'Completed Briefs',
-      value: projectsData?.filter(p => p.brief).length || '0',
-      growth: '+24%',
-      icon: CheckCircle,
-      color: 'text-orange-600'
-    }
-  ]
 
   const getStatusBadge = (status?: string) => {
     const statusConfig = {
@@ -85,17 +49,12 @@ export default function DashboardPage() {
       'completed': { bg: 'bg-green-100', text: 'text-green-800', label: 'Completed' },
       'disputed': { bg: 'bg-red-100', text: 'text-red-800', label: 'Disputed' }
     }
-
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
         {config.label}
       </span>
     )
-  }
-
-  const handleRedirectProjects = () => {
-    router.push('/dashboard/projects')
   }
 
   const handleCreateProject = async () => {
@@ -133,10 +92,205 @@ export default function DashboardPage() {
     )
   }
 
+  const role = user?.role
 
+  // ── Client (employer) dashboard ───────────────────────────────────────────
+  if (role === 'employer') {
+    const pendingCount = projectsData?.filter(p => p.status === 'pending').length ?? 0
+    const totalFunded = projectsData?.reduce((sum, p) => sum + p.total_price, 0) ?? 0
+
+    const clientStats = [
+      {
+        title: 'Projects Commissioned',
+        value: projectsData?.length ?? 0,
+        growth: null,
+        icon: Briefcase,
+        color: 'text-blue-600'
+      },
+      {
+        title: 'Pending Approvals',
+        value: pendingCount,
+        growth: null,
+        icon: Clock,
+        color: 'text-yellow-600'
+      },
+      {
+        title: 'Total Funded',
+        value: `$${totalFunded.toLocaleString()}`,
+        growth: null,
+        icon: DollarSign,
+        color: 'text-purple-600'
+      }
+    ]
+
+    return (
+      <div className="bg-white p-6 space-y-6">
+        {/* Header — no New Project button */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-2">Welcome back, {user?.name || 'Client'}!</p>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {clientStats.map((stat, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className={`p-2 bg-gray-50 rounded-lg ${stat.color}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  </div>
+                </div>
+                {stat.growth && (
+                  <div className="flex items-center space-x-1 text-green-600">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="text-sm font-medium">{stat.growth}</span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Projects Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-white rounded-xl shadow-sm"
+        >
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">My Projects</h2>
+              <button
+                onClick={() => router.push('/dashboard/projects')}
+                className="text-[#AD7D56] hover:text-[#8B6344] text-sm font-medium transition-colors"
+              >
+                View All
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Freelancer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {projectsData?.slice(0, 5).map((project) => (
+                  <tr key={project.project_id} className="hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                      <div className="text-sm text-gray-500">Created: {new Date(project.created_at || '').toLocaleDateString()}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {project.freelancer_id || <span className="text-gray-400">Unassigned</span>}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      ${project.total_price.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {project.timeline_days} days
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {getStatusBadge(project.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {project.status === 'pending' ? (
+                        <button
+                          disabled
+                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
+                        >
+                          Fund Escrow
+                        </button>
+                      ) : project.status === 'active' ? (
+                        <button
+                          onClick={() => router.push(`/dashboard/projects/${project.project_id}`)}
+                          className="inline-flex items-center space-x-1 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View Progress</span>
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {(!projectsData || projectsData.length === 0) && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
+              <p className="text-gray-600">Your commissioned projects will appear here</p>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    )
+  }
+
+  // ── Freelancer dashboard (existing content) ───────────────────────────────
+  const freelancerStats = [
+    {
+      title: 'Total Projects',
+      value: projectsData?.length ?? 0,
+      growth: null,
+      icon: Briefcase,
+      color: 'text-blue-600'
+    },
+    {
+      title: 'Active Projects',
+      value: projectsData?.filter(p => p.status === 'active').length ?? 0,
+      growth: null,
+      icon: Target,
+      color: 'text-green-600'
+    },
+    {
+      title: 'Total Escrow',
+      value: `$${(projectsData?.reduce((sum, p) => sum + p.total_price, 0) ?? 0).toLocaleString()}`,
+      growth: null,
+      icon: DollarSign,
+      color: 'text-purple-600'
+    },
+    {
+      title: 'Completed Briefs',
+      value: projectsData?.filter(p => p.brief).length ?? 0,
+      growth: null,
+      icon: CheckCircle,
+      color: 'text-orange-600'
+    }
+  ]
 
   return (
-    <div className=" bg-white p-6 space-y-6">
+    <div className="bg-white p-6 space-y-6">
       {/* Welcome Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -147,7 +301,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-2">Welcome back to your AI Escrow dashboard, {user?.name || 'User'}!</p>
+            <p className="text-gray-600 mt-2">Welcome back, {user?.name || 'User'}!</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -161,7 +315,7 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
+        {freelancerStats.map((stat, index) => (
           <motion.div
             key={index}
             initial={{ opacity: 0, y: 20 }}
@@ -179,10 +333,12 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-1 text-green-600">
-                <TrendingUp className="w-4 h-4" />
-                <span className="text-sm font-medium">{stat.growth}</span>
-              </div>
+              {stat.growth && (
+                <div className="flex items-center space-x-1 text-green-600">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm font-medium">{stat.growth}</span>
+                </div>
+              )}
             </div>
           </motion.div>
         ))}
@@ -198,7 +354,10 @@ export default function DashboardPage() {
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">Recent Projects</h2>
-            <button onClick={handleRedirectProjects} className="text-[#AD7D56] hover:text-[#8B6344] text-sm font-medium transition-colors">
+            <button
+              onClick={() => router.push('/dashboard/projects')}
+              className="text-[#AD7D56] hover:text-[#8B6344] text-sm font-medium transition-colors"
+            >
               View All
             </button>
           </div>
@@ -208,38 +367,24 @@ export default function DashboardPage() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Project
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Client ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Timeline
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Brief
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brief</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {projectsData?.slice(0, 5).map((project) => (
                 <tr key={project.project_id} className="hover:bg-gray-50 transition-colors duration-150">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{project.name}</div>
-                      <div className="text-sm text-gray-500">Created: {new Date(project.created_at || '').toLocaleDateString()}</div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                    <div className="text-sm text-gray-500">Created: {new Date(project.created_at || '').toLocaleDateString()}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {clientMap[project.employer_id]
-                      ? clientMap[project.employer_id]
+                    {clientMap[project.employer_id ?? '']
+                      ? clientMap[project.employer_id ?? '']
                       : clients.length === 0
                         ? 'Loading...'
                         : 'Unknown Client'}
@@ -272,14 +417,11 @@ export default function DashboardPage() {
               <Briefcase className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-            <p className="text-gray-600">
-              Get started by creating your first escrow project
-            </p>
+            <p className="text-gray-600">Get started by creating your first escrow project</p>
           </div>
         )}
       </motion.div>
 
-      {/* Create Project Modal */}
       {showCreateModal && (
         <CreateProjectModal onClose={() => setShowCreateModal(false)} />
       )}

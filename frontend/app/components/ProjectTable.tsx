@@ -37,7 +37,7 @@ export default function ProjectTable({
   const itemsPerPage = 5
 
   // API
-  const { data, isLoading, isError } = useGetProjectsQuery()
+  const { data, isLoading, isError, refetch } = useGetProjectsQuery()
   const { data: clientsData } = useGetClientsQuery()
 
   // Type guard to handle different API response formats
@@ -140,7 +140,7 @@ export default function ProjectTable({
 
   const handleBriefSuccess = () => {
     // Refetch projects to update the table
-    window.location.reload()
+    refetch()
   }
 
   // Pagination numbers logic

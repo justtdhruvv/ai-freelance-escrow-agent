@@ -141,6 +141,25 @@ export class ProjectController {
     }
   };
 
+  getProjectMilestones = async (req: Request, res: Response): Promise<void> => {
+    logger.request('GET', `/projects/${req.params.id}/milestones`);
+
+    try {
+      const user = (req as any).user;
+      const { id } = req.params;
+
+      if (!user) { res.status(401).json({ error: 'User not authenticated' }); return; }
+
+      const milestones = await this.projectService.getMilestonesByProjectId(id as string, user.userId, user.role);
+      if (milestones === null) { res.status(403).json({ error: 'Access denied' }); return; }
+
+      res.status(200).json(milestones);
+    } catch (error) {
+      logger.error('Get project milestones error', error);
+      res.status(500).json({ error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' });
+    }
+  };
+
   getProjectById = async (req: Request, res: Response): Promise<void> => {
     logger.request('GET', `/projects/${req.params.id}`);
     

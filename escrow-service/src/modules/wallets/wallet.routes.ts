@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { WalletController } from './wallet.controller';
-import { authenticateToken } from '../../middlewares/auth.middleware';
+import { authenticateToken, requireRole } from '../../middlewares/auth.middleware';
 
 const router = Router();
 const walletController = new WalletController();
 
 // Apply authentication middleware to all wallet routes
 router.use(authenticateToken);
+router.use(requireRole('freelancer'));
 
 // GET /wallet - Get freelancer wallet details
 router.get('/', walletController.getWallet);

@@ -30,21 +30,23 @@ export class AQAService {
   }
 
   async runAQA(submissionId: string): Promise<AQAResult> {
+    // Fetch all data BEFORE acquiring the transaction to avoid SQLite lock deadlocks
+    const submission = await this.submissionService.getSubmissionById(submissionId);
+    if (!submission) throw new Error('Submission not found');
+
+    const milestone = await this.submissionService.getMilestoneWithChecks(submission.milestone_id || '');
+    if (!milestone) throw new Error('Milestone not found');
+
+    const githubToken = await this.submissionService.getUserGitHubToken(submission.user_id);
+
+    const startTime = Date.now();
+    const aqaOutput = await this.runChecks(submission, milestone, githubToken || '');
+    const executionTime = Date.now() - startTime;
+
+    // Phase 1: store core AQA results atomically
     const trx = await db.transaction();
-
+    let aqaResult: AQAResult;
     try {
-      const submission = await this.submissionService.getSubmissionById(submissionId);
-      if (!submission) throw new Error('Submission not found');
-
-      const milestone = await this.submissionService.getMilestoneWithChecks(submission.milestone_id || '');
-      if (!milestone) throw new Error('Milestone not found');
-
-      const githubToken = await this.submissionService.getUserGitHubToken(submission.user_id);
-
-      const startTime = Date.now();
-      const aqaOutput = await this.runChecks(submission, milestone, githubToken || '');
-      const executionTime = Date.now() - startTime;
-
       logger.info('Storing AQA result', {
         submission_id: submissionId,
         milestone_id: milestone.milestone_id,
@@ -52,7 +54,7 @@ export class AQAService {
         execution_time_ms: executionTime
       });
 
-      const aqaResult = await this.storeAQAResult(trx, submissionId, milestone.milestone_id, {
+      aqaResult = await this.storeAQAResult(trx, submissionId, milestone.milestone_id, {
         ...aqaOutput,
         execution_time_ms: executionTime
       });
@@ -61,25 +63,16 @@ export class AQAService {
         .where({ submission_id: submissionId })
         .update({ status: 'aqa_completed', aqa_completed_at: new Date(), updated_at: new Date() });
 
-      await this.submissionService.updateMilestoneStatus(milestone.milestone_id, aqaResult.verdict);
+      const milestoneStatus = aqaResult.verdict === 'passed' ? 'passed'
+        : aqaResult.verdict === 'partial' ? 'partial'
+        : 'failed';
+      await trx('milestone_checks').where({ milestone_id: milestone.milestone_id }).update({ status: milestoneStatus });
+
       if (aqaResult.verdict === 'failed') {
         await this.applyRevisionLogic(trx, milestone.milestone_id);
       }
-      await this.processPaymentTrigger(trx, aqaResult);
-      await this.checkAndCompleteProject(trx, milestone.milestone_id);
-      await this.updatePfiScore(submission.user_id, aqaResult.verdict);
 
       await trx.commit();
-
-      logger.info('AQA completed successfully', {
-        aqa_id: aqaResult.aqa_id,
-        submission_id: submissionId,
-        verdict: aqaResult.verdict,
-        execution_time_ms: executionTime
-      });
-
-      return aqaResult;
-
     } catch (error) {
       await trx.rollback();
       await this.submissionService.updateSubmissionStatus(submissionId, 'aqa_failed');
@@ -87,6 +80,28 @@ export class AQAService {
       logger.error('AQA execution failed', error);
       throw error;
     }
+
+    // Phase 2: post-commit — payment and PFI updates (non-atomic, failures are non-critical)
+    try {
+      await this.processPaymentTrigger(db as any, aqaResult!);
+    } catch (payErr) {
+      logger.error('Post-AQA payment trigger failed (non-critical)', payErr);
+    }
+    try {
+      await this.checkAndCompleteProject(db as any, milestone.milestone_id);
+    } catch (projErr) {
+      logger.error('Post-AQA project completion check failed (non-critical)', projErr);
+    }
+    await this.updatePfiScore(submission.user_id, aqaResult!.verdict);
+
+    logger.info('AQA completed successfully', {
+      aqa_id: aqaResult!.aqa_id,
+      submission_id: submissionId,
+      verdict: aqaResult!.verdict,
+      execution_time_ms: aqaResult!.execution_time_ms
+    });
+
+    return aqaResult!;
   }
 
   private async runChecks(

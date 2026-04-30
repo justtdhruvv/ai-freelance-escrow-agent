@@ -28,6 +28,7 @@ export class AIService {
     const totalPrice: number = project.total_price || 0;
     const totalDays: number = project.timeline_days || 30;
     let milestones: GeneratedMilestone[];
+    let usedFallback = false;
 
     try {
       const sop = await generateSOP(
@@ -43,17 +44,35 @@ export class AIService {
         const estimatedDays = Math.max(1, Math.round((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         return {
           title: m.title || '',
-          description: '',
+          description: m.checks && m.checks.length > 0
+            ? m.checks.map((c: any) => c.description).filter(Boolean).join('; ')
+            : m.title || '',
           amount: m.payment_amount || 0,
           estimated_days: estimatedDays
         };
       });
     } catch (aiError) {
       logger.error('SOP generation failed, using fallback milestones', aiError);
+      usedFallback = true;
       milestones = [
-        { title: 'Phase 1 - Setup & Planning', description: '', amount: Math.round(totalPrice * 0.2), estimated_days: 7 },
-        { title: 'Phase 2 - Core Development', description: '', amount: Math.round(totalPrice * 0.6), estimated_days: 21 },
-        { title: 'Phase 3 - Testing & Delivery', description: '', amount: Math.round(totalPrice * 0.2), estimated_days: totalDays }
+        {
+          title: 'Phase 1 - Setup & Planning',
+          description: 'Project setup, requirements finalization, architecture planning, and environment configuration.',
+          amount: Math.round(totalPrice * 0.2),
+          estimated_days: 7
+        },
+        {
+          title: 'Phase 2 - Core Development',
+          description: 'Implementation of core features, integration of main components, and iterative development.',
+          amount: Math.round(totalPrice * 0.6),
+          estimated_days: 21
+        },
+        {
+          title: 'Phase 3 - Testing & Delivery',
+          description: 'Quality assurance, bug fixes, documentation, deployment, and final handover.',
+          amount: Math.round(totalPrice * 0.2),
+          estimated_days: totalDays
+        }
       ];
     }
 
@@ -64,7 +83,7 @@ export class AIService {
 
     const result: AIGenerationResult = {
       milestones,
-      confidence: 0.85,
+      confidence: usedFallback ? 0.5 : 0.85,
       processing_time: Date.now() - startTime
     };
 

@@ -38,15 +38,10 @@ const authSlice = createSlice({
       
       // Use TokenManager for consistent token storage
       TokenManager.setToken(action.payload.token)
-      
+
       // Store user info in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(action.payload.user))
-      
-      console.log('AuthSlice: Login successful', {
-        userId: action.payload.user.id,
-        role: action.payload.user.role,
-        tokenPreview: action.payload.token.substring(0, 20) + '...'
-      })
+      localStorage.setItem('role', action.payload.user.role ?? 'freelancer')
     },
     loginFailure: (state) => {
       state.isLoading = false
@@ -57,6 +52,7 @@ const authSlice = createSlice({
       // Clear token using TokenManager
       TokenManager.removeToken()
       localStorage.removeItem('user')
+      localStorage.removeItem('role')
     },
     logout: (state) => {
       state.user = null
@@ -67,8 +63,7 @@ const authSlice = createSlice({
       // Clear token using TokenManager
       TokenManager.removeToken()
       localStorage.removeItem('user')
-      
-      console.log('AuthSlice: Logout successful')
+      localStorage.removeItem('role')
     },
     initializeAuth: (state) => {
       // Initialize token using TokenManager
@@ -80,23 +75,18 @@ const authSlice = createSlice({
       if (token && userStr) {
         try {
           const user = JSON.parse(userStr)
+          if (!user.role) {
+            user.role = localStorage.getItem('role') ?? 'freelancer'
+          }
           state.token = token
           state.user = user
           state.isAuthenticated = true
-          
-          console.log('AuthSlice: Initialized with existing auth', {
-            userId: user.id,
-            role: user.role,
-            hasToken: !!token
-          })
         } catch (error) {
           console.error('AuthSlice: Error parsing user data:', error)
           // Clear invalid data
           TokenManager.removeToken()
           localStorage.removeItem('user')
         }
-      } else {
-        console.log('AuthSlice: No existing auth data found')
       }
     },
     refreshToken: (state, action: PayloadAction<string>) => {
@@ -104,8 +94,6 @@ const authSlice = createSlice({
       
       // Update token using TokenManager
       TokenManager.setToken(action.payload)
-      
-      console.log('AuthSlice: Token refreshed')
     },
   },
 })

@@ -243,7 +243,6 @@ export class WalletService {
       
       // Calculate conversion details
       const realAmount = Math.floor(internalAmount * conversionRate);
-      const fees = Math.floor(realAmount * 0.02); // 2% conversion fee
       
       // Create conversion record
       const conversionId = uuidv4();

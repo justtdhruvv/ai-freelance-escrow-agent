@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { SOPController } from './sop.controller';
-import { authenticateToken } from '../../middlewares/auth.middleware';
+import { authenticateToken, requireRole } from '../../middlewares/auth.middleware';
 
 
 const router = Router();
 const sopController = new SOPController();
 
 // Generate and store SOP from AI
-router.post('/generate', sopController.generateSOP);
+router.post('/generate', authenticateToken, requireRole('freelancer'), sopController.generateSOP);
 
 // Get SOP by ID
 router.get('/:sop_id', sopController.getSOPById);

@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger';
 
 export interface User {
   user_id: string;
+  name: string;
   role: 'employer' | 'freelancer';
   email: string;
   password_hash: string;
@@ -16,6 +17,7 @@ export interface User {
 }
 
 export interface CreateUserInput {
+  name?: string;
   email: string;
   password: string;
   role: 'employer' | 'freelancer';
@@ -52,6 +54,7 @@ export class AuthService {
       await db('users')
         .insert({
           user_id,
+          name: userData.name || '',
           email: userData.email,
           password_hash,
           role: userData.role,

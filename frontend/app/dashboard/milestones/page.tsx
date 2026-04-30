@@ -8,11 +8,14 @@ import { motion } from 'framer-motion'
 
 import { Target, Calendar, DollarSign, Clock, CheckCircle, AlertCircle, RefreshCw, ChevronDown, Github, ExternalLink, Send, Play } from 'lucide-react'
 
-import { useGetProjectsQuery, useGetProjectMilestonesQuery, useGetProjectSOPsQuery, useGetSOPMilestonesQuery, useSubmitMilestoneMutation, useRunAQAsMutation } from '../../store/api/projectsApi'
+import { useGetProjectsQuery, useGetProjectMilestonesQuery, useSubmitMilestoneMutation, useRunAQAsMutation } from '../../store/api/projectsApi'
+import { useRouteProtection } from '../../hooks/useRouteProtection'
 
 
 
 export default function MilestonesPage() {
+
+  useRouteProtection()
 
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
 
@@ -93,18 +96,6 @@ export default function MilestonesPage() {
     }
 
   }, [selectedMilestone])
-
-
-
-  // Get SOPs for the selected project to find SOP IDs
-
-  const { data: projectSOPs, isLoading: sopsLoading, error: sopsError } = useGetProjectSOPsQuery(
-
-    selectedProjectId,
-
-    { skip: !selectedProjectId }
-
-  )
 
 
 
@@ -317,31 +308,23 @@ export default function MilestonesPage() {
 
 
 
-  // Get milestones for each SOP in the project
+  // Fetch all milestones for the selected project directly
 
-  const sopIds = projectSOPs?.map((sop, index) => sop.sop_id) || []
+  const {
 
+    data: filteredMilestones = [],
 
+    isLoading: milestonesLoading,
 
-  // Fetch milestones for all SOPs in the project (we'll filter by project_id)
+    error: milestonesError
 
-  const { data: allMilestones, isLoading: milestonesLoading, error: milestonesError } = useGetSOPMilestonesQuery(
+  } = useGetProjectMilestonesQuery(
 
-    sopIds.length > 0 ? sopIds[0] : '', // Use first SOP ID to fetch milestones
+    selectedProjectId,
 
-    { skip: sopIds.length === 0 }
+    { skip: !selectedProjectId }
 
   )
-
-
-
-  // Filter milestones by the selected project ID
-
-  const filteredMilestones = allMilestones?.filter(
-
-    milestone => milestone.project_id === selectedProjectId
-
-  ) || []
 
 
 
@@ -606,48 +589,6 @@ export default function MilestonesPage() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Project</h3>
 
                 <p className="text-gray-600">Choose a project from the dropdown above to view its milestones</p>
-
-              </div>
-
-            </div>
-
-          )}
-
-
-
-          {/* SOPs Loading */}
-
-          {selectedProjectId && sopsLoading && (
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-
-              <div className="text-center">
-
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#AD7D56] mx-auto mb-4"></div>
-
-                <p className="text-gray-600">Loading SOPs...</p>
-
-              </div>
-
-            </div>
-
-          )}
-
-
-
-          {/* SOPs Error */}
-
-          {selectedProjectId && sopsError && (
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
-
-              <div className="text-center">
-
-                <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load SOPs</h3>
-
-                <p className="text-gray-600">Please try refreshing the page</p>
 
               </div>
 

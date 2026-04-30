@@ -38,6 +38,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${FRONTEND_URL:-http://localhost:3001}
+        BACKEND_URL: http://backend:3000
     container_name: escrow-frontend
     restart: unless-stopped
     expose:

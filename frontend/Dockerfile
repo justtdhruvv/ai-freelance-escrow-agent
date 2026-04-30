@@ -7,9 +7,13 @@ RUN npm ci
 
 COPY . .
 
-# Build args become env vars available at build time for NEXT_PUBLIC_ vars
+# Build args become env vars available at build time
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+# BACKEND_URL must be available at build time so next.config.ts rewrites() can use it
+ARG BACKEND_URL=http://backend:3000
+ENV BACKEND_URL=$BACKEND_URL
 
 RUN npm run build
 
